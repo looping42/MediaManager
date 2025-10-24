@@ -38,6 +38,11 @@ namespace MediaManager
         public MainWindow()
         {
             InitializeComponent();
+            Loaded += (s, e) =>
+            {
+                this.Width = 1400;
+                this.Height = 900;
+            };
             DataContext = this;
 
             // Initialisation de la commande du bouton
