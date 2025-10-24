@@ -1,0 +1,45 @@
+﻿<Window x:Class="MediaManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Movie Scanner" Height="600" Width="1000"
+        Background="{DynamicResource MaterialDesignPaper}">
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <!-- Liste de films -->
+        <ListBox x:Name="MoviesList"
+                 ItemsSource="{Binding Movies}"
+                 SelectedItem="{Binding SelectedMovie, Mode=TwoWay}"
+                 Background="{DynamicResource MaterialDesignCardBackground}"
+                 BorderThickness="0"
+                 Foreground="{DynamicResource MaterialDesignBody}"
+                 FontSize="16"
+                 Margin="10">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Image Source="{Binding PosterPath}" Height="60" Width="40" Margin="0,0,10,0" />
+                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Détails du film -->
+        <materialDesign:Card Grid.Column="1" Margin="20" Padding="20" DataContext="{Binding SelectedMovie}">
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" FontSize="26" FontWeight="Bold" Margin="0,0,0,10" />
+                <TextBlock Text="{Binding Year}" FontSize="16" Foreground="Gray" Margin="0,0,0,20" />
+                <Image Source="{Binding PosterPath}" Height="300" Stretch="Uniform" Margin="0,0,0,20" />
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding Overview}" TextWrapping="Wrap" FontSize="14" />
+                </ScrollViewer>
+            </StackPanel>
+        </materialDesign:Card>
+    </Grid>
+</Window>
