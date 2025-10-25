@@ -33,26 +33,22 @@ namespace MediaManager.Business
                 MessageBox.Show("Le dossier spécifié n'existe pas.", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
-            var existingNfos = new HashSet<string>(_db.GetAllMovies().Select(m => m.NfoPath));
+            //var existingNfos = new HashSet<string>(_db.GetAllMovies().Select(m => m.NfoPath));
+            var existingNfos = new ConcurrentDictionary<string, bool>(_db.GetAllMovies().Select(m => new KeyValuePair<string, bool>(m.NfoPath, true)));
 
             int addedCount = 0;
             int skippedCount = 0;
             var moviesToInsert = new ConcurrentBag<Movie>();
 
-            var folders = Directory.EnumerateDirectories(directoryPath).ToList();
+            //var folders = Directory.EnumerateDirectories(directoryPath).ToList();
 
-            //    Parallel.ForEach(Directory.EnumerateFiles(directoryPath, "*.nfo", SearchOption.AllDirectories), nfoFile =>
-            //{
-            Parallel.ForEach(folders, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, folder =>
+            Parallel.ForEach(Directory.EnumerateFiles(directoryPath, "*.nfo", SearchOption.AllDirectories), nfoFile =>
             {
                 try
                 {
-                    var nfoFile = Directory.EnumerateFiles(folder, "*.nfo", SearchOption.TopDirectoryOnly).FirstOrDefault();
-                    if (nfoFile == null) return;
-
-                    if (existingNfos.Contains(nfoFile))
+                    if (!existingNfos.TryAdd(nfoFile, true))
                     {
-                        skippedCount++;
+                        Interlocked.Increment(ref skippedCount);
                         return;
                     }
 
@@ -61,22 +57,22 @@ namespace MediaManager.Business
                     string plot = "";
                     string imdbId = "";
 
-                    //using (var reader = XmlReader.Create(nfoFile))
-                    //{
-                    //    if (reader.ReadToFollowing("title"))
-                    //        title = reader.ReadElementContentAsString();
+                    using (var reader = XmlReader.Create(nfoFile))
+                    {
+                        if (reader.ReadToFollowing("title"))
+                            title = reader.ReadElementContentAsString();
 
-                    //    if (reader.ReadToFollowing("year"))
-                    //        year = reader.ReadElementContentAsString();
+                        if (reader.ReadToFollowing("year"))
+                            year = reader.ReadElementContentAsString();
 
-                    //    if (reader.ReadToFollowing("plot"))
-                    //        plot = reader.ReadElementContentAsString();
+                        if (reader.ReadToFollowing("plot"))
+                            plot = reader.ReadElementContentAsString();
 
-                    //    if (reader.ReadToFollowing("id"))
-                    //        imdbId = reader.ReadElementContentAsString();
-                    //    else if (reader.ReadToFollowing("imdbid"))
-                    //        imdbId = reader.ReadElementContentAsString();
-                    //}
+                        if (reader.ReadToFollowing("id"))
+                            imdbId = reader.ReadElementContentAsString();
+                        else if (reader.ReadToFollowing("imdbid"))
+                            imdbId = reader.ReadElementContentAsString();
+                    }
 
                     //var xml = XDocument.Load(nfoFile);
                     //var title = xml.Root?.Element("title")?.Value ?? Path.GetFileNameWithoutExtension(nfoFile);
@@ -87,7 +83,7 @@ namespace MediaManager.Business
                     //    ?? xml.Root?.Element("imdbid")?.Value
                     //    ?? "";
 
-                    //var folder = Path.GetDirectoryName(nfoFile);
+                    var folder = Path.GetDirectoryName(nfoFile);
 
                     //// Enumerate all files in the folder once
                     //var folderFiles = Directory.EnumerateFiles(folder).ToList();
@@ -115,7 +111,7 @@ namespace MediaManager.Business
                         ClearLogoUrl = clearLogo,
                         ImdbId = imdbId
                     });
-
+                    Interlocked.Increment(ref addedCount);
                     addedCount++;
                 }
                 catch { /* Ignore fichiers corrompus */ }
