@@ -67,6 +67,17 @@ namespace MediaManager.Data
             transaction.Commit();
         }
 
+        public Movie GetMovieById(int id)
+        {
+            using var connection = new SqliteConnection($"Data Source={_dbPath}");
+            connection.Open();
+
+            return connection.QueryFirstOrDefault<Movie>(
+                "SELECT * FROM Movies WHERE Id = @Id",
+                new { Id = id }
+            );
+        }
+
         public IEnumerable<Movie> GetAllMovies(string search = null)
         {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");

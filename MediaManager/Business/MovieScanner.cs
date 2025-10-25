@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace MediaManager.Business
@@ -37,52 +38,70 @@ namespace MediaManager.Business
             int addedCount = 0;
             int skippedCount = 0;
             var moviesToInsert = new ConcurrentBag<Movie>();
-            Parallel.ForEach(Directory.EnumerateFiles(directoryPath, "*.nfo", SearchOption.AllDirectories), nfoFile =>
+
+            var folders = Directory.EnumerateDirectories(directoryPath).ToList();
+
+            //    Parallel.ForEach(Directory.EnumerateFiles(directoryPath, "*.nfo", SearchOption.AllDirectories), nfoFile =>
+            //{
+            Parallel.ForEach(folders, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, folder =>
             {
                 try
                 {
+                    var nfoFile = Directory.EnumerateFiles(folder, "*.nfo", SearchOption.TopDirectoryOnly).FirstOrDefault();
+                    if (nfoFile == null) return;
+
                     if (existingNfos.Contains(nfoFile))
                     {
                         skippedCount++;
                         return;
                     }
 
-                    var xml = XDocument.Load(nfoFile);
-                    var title = xml.Root?.Element("title")?.Value ?? Path.GetFileNameWithoutExtension(nfoFile);
-                    var year = xml.Root?.Element("year")?.Value ?? "";
-                    var plot = xml.Root?.Element("plot")?.Value ?? "";
+                    string title = Path.GetFileNameWithoutExtension(nfoFile);
+                    string year = "";
+                    string plot = "";
+                    string imdbId = "";
 
-                    var imdbId = xml.Root?.Element("id")?.Value
-                        ?? xml.Root?.Element("imdbid")?.Value
-                        ?? "";
+                    //using (var reader = XmlReader.Create(nfoFile))
+                    //{
+                    //    if (reader.ReadToFollowing("title"))
+                    //        title = reader.ReadElementContentAsString();
 
-                    var folder = Path.GetDirectoryName(nfoFile);
+                    //    if (reader.ReadToFollowing("year"))
+                    //        year = reader.ReadElementContentAsString();
 
-                    // Enumerate all files in the folder once
-                    var folderFiles = Directory.EnumerateFiles(folder).ToList();
+                    //    if (reader.ReadToFollowing("plot"))
+                    //        plot = reader.ReadElementContentAsString();
 
-                    // Find the files in memory instead of hitting disk multiple times
-                    var poster = folderFiles.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && f.Contains("poster", StringComparison.OrdinalIgnoreCase))
-                                 ?? folderFiles.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase));
+                    //    if (reader.ReadToFollowing("id"))
+                    //        imdbId = reader.ReadElementContentAsString();
+                    //    else if (reader.ReadToFollowing("imdbid"))
+                    //        imdbId = reader.ReadElementContentAsString();
+                    //}
 
-                    string posterThumb = null;
-                    if (poster != null)
-                    {
-                        posterThumb = Path.Combine(folder, "thumb_" + Path.GetFileName(poster));
-                        if (!File.Exists(posterThumb))
-                        {
-                            // Generate a small thumbnail
-                            using var image = System.Drawing.Image.FromFile(poster);
-                            int thumbWidth = 50;
-                            int thumbHeight = (int)((double)image.Height / image.Width * thumbWidth);
-                            using var thumb = new Bitmap(image, new System.Drawing.Size(thumbWidth, thumbHeight));
-                            thumb.Save(posterThumb, ImageFormat.Jpeg);
-                        }
-                    }
+                    //var xml = XDocument.Load(nfoFile);
+                    //var title = xml.Root?.Element("title")?.Value ?? Path.GetFileNameWithoutExtension(nfoFile);
+                    //var year = xml.Root?.Element("year")?.Value ?? "";
+                    //var plot = xml.Root?.Element("plot")?.Value ?? "";
 
-                    var fanart = folderFiles.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && f.Contains("fanart", StringComparison.OrdinalIgnoreCase));
+                    //var imdbId = xml.Root?.Element("id")?.Value
+                    //    ?? xml.Root?.Element("imdbid")?.Value
+                    //    ?? "";
 
-                    var clearLogo = folderFiles.FirstOrDefault(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && f.Contains("clearlogo", StringComparison.OrdinalIgnoreCase));
+                    //var folder = Path.GetDirectoryName(nfoFile);
+
+                    //// Enumerate all files in the folder once
+                    //var folderFiles = Directory.EnumerateFiles(folder).ToList();
+
+                    //// Find the files in memory instead of hitting disk multiple times
+                    //var poster = folderFiles.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && f.Contains("poster", StringComparison.OrdinalIgnoreCase))
+                    //             ?? folderFiles.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase));
+
+                    //var fanart = folderFiles.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && f.Contains("fanart", StringComparison.OrdinalIgnoreCase));
+
+                    //var clearLogo = folderFiles.FirstOrDefault(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && f.Contains("clearlogo", StringComparison.OrdinalIgnoreCase));
+                    var poster = "";
+                    var fanart = "";
+                    var clearLogo = "";
 
                     moviesToInsert.Add(new Movie
                     {
@@ -91,7 +110,7 @@ namespace MediaManager.Business
                         Plot = plot,
                         NfoPath = nfoFile,
                         PosterUrl = poster,
-                        PosterThumb = posterThumb,  // small image for ListBox
+                        PosterThumb = "",  // small image for ListBox
                         FanartUrl = fanart,
                         ClearLogoUrl = clearLogo,
                         ImdbId = imdbId

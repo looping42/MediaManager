@@ -1,8 +1,10 @@
 ﻿using MediaManager.Business;
 using MediaManager.Data;
 using MediaManager.Models;
+using MediaManager.NewFolder;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Windows;
@@ -14,6 +16,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Xml.Serialization;
 
 namespace MediaManager
 {
@@ -25,8 +28,11 @@ namespace MediaManager
         private Movie _selectedMovie;
         private readonly DatabaseService _db;
         private readonly MovieScanner _scanner;
+        public ICommand LoadNfoCommand { get; }
+        public ICommand ScanMoviesCommand { get; }
 
         public ObservableCollection<Movie> Movies { get; set; } = new();
+        private MovieNfo _selectedMovieNfo;
 
         public Movie SelectedMovie
         {
@@ -35,10 +41,19 @@ namespace MediaManager
             {
                 _selectedMovie = value;
                 OnPropertyChanged();
+                LoadNfoCommand.Execute(null);
             }
         }
 
-        public ICommand ScanMoviesCommand { get; }
+        public MovieNfo SelectedMovieNfo
+        {
+            get => _selectedMovieNfo;
+            set
+            {
+                _selectedMovieNfo = value;
+                OnPropertyChanged();
+            }
+        }
 
         public MainWindow()
         {
@@ -51,15 +66,31 @@ namespace MediaManager
             _db = new DatabaseService();
             _scanner = new MovieScanner(_db);
             Movies = new ObservableCollection<Movie>(_db.GetAllMovies());
+            LoadNfoCommand = new RelayCommand(param => SelectedMovieNfo = LoadSelectedMovieNfo());
             DataContext = this;
 
             // Initialisation de la commande du bouton
             ScanMoviesCommand = new RelayCommand(ScanMovies);
         }
 
-        private void ScanMovies(object parameter)
+        private async void ScanMovies(object parameter)
         {
-            MessageBox.Show("🚀 Scan des films en cours...", "Scan", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                LoadingOverlay.Visibility = Visibility.Visible;
+                //MessageBox.Show("🚀 Scan des films en cours...", "Scan", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                var folder = "\\\\192.168.1.12\\Share\\424084BC4084B865"; // plus tard, tu pourras ouvrir un dialogue
+                await Task.Run(() => _scanner.ScanDirectory(folder));
+                Movies.Clear();
+                foreach (var m in _db.GetAllMovies())
+                    Movies.Add(m);
+            }
+            finally
+            {
+                // Cache l'overlay même en cas d'erreur
+                LoadingOverlay.Visibility = Visibility.Collapsed;
+            }
         }
 
         // --- Binding support (INotifyPropertyChanged) ---
@@ -68,13 +99,18 @@ namespace MediaManager
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private void ScanButton_Click(object sender, RoutedEventArgs e)
+        private MovieNfo LoadSelectedMovieNfo()
         {
-            var folder = "\\\\192.168.1.12\\Share\\424084BC4084B865"; // plus tard, tu pourras ouvrir un dialogue
-            _scanner.ScanDirectory(folder);
-            Movies.Clear();
-            foreach (var m in _db.GetAllMovies())
-                Movies.Add(m);
+            if (SelectedMovie == null) return null;
+
+            var movieFromDb = _db.GetMovieById(SelectedMovie.Id);
+            if (movieFromDb == null) return null;
+
+            var serializer = new XmlSerializer(typeof(MovieNfo));
+            using var reader = new StreamReader(movieFromDb.NfoPath);
+            MovieNfo movie = (MovieNfo)serializer.Deserialize(reader);
+
+            return movie;
         }
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -83,29 +119,6 @@ namespace MediaManager
             MoviesList.ItemsSource = string.IsNullOrEmpty(searchText)
                 ? _db.GetAllMovies()
                 : _db.GetAllMovies(searchText);
-        }
-    }
-
-    // --- Commande générique pour les boutons / actions ---
-    public class RelayCommand : ICommand
-    {
-        private readonly Action<object> _execute;
-        private readonly Predicate<object> _canExecute;
-
-        public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
-        {
-            _execute = execute;
-            _canExecute = canExecute;
-        }
-
-        public bool CanExecute(object parameter) => _canExecute == null || _canExecute(parameter);
-
-        public void Execute(object parameter) => _execute(parameter);
-
-        public event EventHandler CanExecuteChanged
-        {
-            add => CommandManager.RequerySuggested += value;
-            remove => CommandManager.RequerySuggested -= value;
         }
     }
 }
