@@ -1,4 +1,7 @@
-﻿using System.Collections.ObjectModel;
+﻿using MediaManager.Business;
+using MediaManager.Data;
+using MediaManager.Models;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -20,6 +23,8 @@ namespace MediaManager
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         private Movie _selectedMovie;
+        private readonly DatabaseService _db;
+        private readonly MovieScanner _scanner;
 
         public ObservableCollection<Movie> Movies { get; set; } = new();
 
@@ -43,35 +48,18 @@ namespace MediaManager
                 this.Width = 1400;
                 this.Height = 900;
             };
+            _db = new DatabaseService();
+            _scanner = new MovieScanner(_db);
+            Movies = new ObservableCollection<Movie>(_db.GetAllMovies());
             DataContext = this;
 
             // Initialisation de la commande du bouton
             ScanMoviesCommand = new RelayCommand(ScanMovies);
-
-            // Exemples de données (tu remplaceras ça par ton scan réel)
-            Movies.Add(new Movie
-            {
-                Title = "Inception",
-                Year = "2010",
-                Overview = "Un voleur professionnel s'infiltre dans les rêves de ses cibles pour voler leurs secrets.",
-                PosterPath = "https://image.tmdb.org/t/p/w500/qmDpIHrmpJINaRKAfWQfftjCdyi.jpg"
-            });
-
-            Movies.Add(new Movie
-            {
-                Title = "Interstellar",
-                Year = "2014",
-                Overview = "Un groupe d'explorateurs traverse un trou de ver pour sauver l'humanité.",
-                PosterPath = "https://image.tmdb.org/t/p/w500/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg"
-            });
-
-            SelectedMovie = Movies[0];
         }
 
         private void ScanMovies(object parameter)
         {
             MessageBox.Show("🚀 Scan des films en cours...", "Scan", MessageBoxButton.OK, MessageBoxImage.Information);
-            // Ici tu mettras ton code de scrapping ou de scan de répertoires
         }
 
         // --- Binding support (INotifyPropertyChanged) ---
@@ -79,15 +67,23 @@ namespace MediaManager
 
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
 
-    // --- Classe de base pour les films ---
-    public class Movie
-    {
-        public string Title { get; set; }
-        public string Year { get; set; }
-        public string Overview { get; set; }
-        public string PosterPath { get; set; }
+        private void ScanButton_Click(object sender, RoutedEventArgs e)
+        {
+            var folder = "\\\\192.168.1.12\\Share\\424084BC4084B865"; // plus tard, tu pourras ouvrir un dialogue
+            _scanner.ScanDirectory(folder);
+            Movies.Clear();
+            foreach (var m in _db.GetAllMovies())
+                Movies.Add(m);
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            var searchText = SearchBox.Text.Trim();
+            MoviesList.ItemsSource = string.IsNullOrEmpty(searchText)
+                ? _db.GetAllMovies()
+                : _db.GetAllMovies(searchText);
+        }
     }
 
     // --- Commande générique pour les boutons / actions ---
