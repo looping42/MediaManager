@@ -49,7 +49,7 @@ namespace MediaManager.Data
             ) > 0;
         }
 
-        public void InsertMovie(ConcurrentBag<Movie> moviesToInsert)
+        public void InsertMovie(List<Movie> moviesToInsert)
         {
             using var connection = new SqliteConnection($"Data Source={_dbPath}");
             connection.Open();
