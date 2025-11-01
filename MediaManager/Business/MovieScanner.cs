@@ -43,10 +43,23 @@ namespace MediaManager.Business
                             !f.Contains(".deletedByTMM") &&
                             !f.Contains(".HomeTheater"));
 
+            var moviesByNfo = allMovies.ToDictionary(m => m.NfoUrl, m => m);
+
             foreach (var nfoFile in nfoFiles)
             {
                 var folder = Path.GetDirectoryName(nfoFile);
                 DateTime lastWrite = Directory.GetLastWriteTimeUtc(folder);
+
+                // On vérifie s’il existe déjà dans la DB
+                if (moviesByNfo.TryGetValue(nfoFile, out var existingMovie))
+                {
+                    // Si le dossier n’a pas changé depuis, on saute
+                    if (DateTime.TryParse(existingMovie.LastWriteUtc, out var lastWriteDb)
+                        && lastWrite <= lastWriteDb)
+                    {
+                        continue;
+                    }
+                }
 
                 string title = "";
                 using (var reader = XmlReader.Create(nfoFile))
@@ -129,7 +142,6 @@ namespace MediaManager.Business
                 };
 
                 _movieRepo.UpdateMovie(movie); // méthode qui update ou insert
-
             }
             catch
             {

@@ -35,8 +35,10 @@ namespace MediaManager
         public ObservableCollection<Movie> Movies { get; set; } = new();
         private MovieNfo _selectedMovieNfo;
 
-        // --- Binding support (INotifyPropertyChanged) ---
         public event PropertyChangedEventHandler PropertyChanged;
+
+        // Callback pour log
+        public Action<string>? LogCallback { get; set; }
 
         public Movie SelectedMovie
         {
@@ -59,6 +61,11 @@ namespace MediaManager
             }
         }
 
+        private void Log(string message)
+        {
+            LogCallback?.Invoke(message);
+        }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -78,12 +85,15 @@ namespace MediaManager
 
             // Initialisation de la commande du bouton
             ScanMoviesCommand = new RelayCommand(ScanMovies);
+            LogCallback = LogMessage;
         }
 
         private async void ScanMovies(object parameter)
         {
             try
             {
+                Log($"Start Scan");
+
                 ScanProgressBar.Visibility = Visibility.Visible;
                 var paths = _settingsRepo.GetPaths("ScanPaths");
                 if (paths.Count == 0)
@@ -159,6 +169,16 @@ namespace MediaManager
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        public void LogMessage(string message)
+        {
+            // On s'assure que le code s'exécute dans le thread UI
+            Dispatcher.Invoke(() =>
+            {
+                ScanLogTextBox.AppendText($"{DateTime.Now:HH:mm:ss} - {message}\n");
+                ScanLogTextBox.ScrollToEnd();
+            });
         }
     }
 }

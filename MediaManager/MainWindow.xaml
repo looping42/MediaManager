@@ -48,7 +48,16 @@
                  Foreground="{DynamicResource PrimaryHueMidBrush}"
                  Style="{StaticResource MaterialDesignLinearProgressBar}" />
         </StackPanel>
-
+        <!-- Log en bas -->
+        <TextBox x:Name="ScanLogTextBox"
+         DockPanel.Dock="Bottom"
+         Height="150"
+         Margin="10"
+         VerticalScrollBarVisibility="Auto"
+         HorizontalScrollBarVisibility="Auto"
+         IsReadOnly="True"
+         TextWrapping="Wrap"
+         Background="{DynamicResource MaterialDesignPaper}" />
         <TabControl>
             <!-- Premier onglet : Films -->
             <TabItem Header="Films">

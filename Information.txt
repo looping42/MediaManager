@@ -1,0 +1,21 @@
+cas à gérer lors scan
+
+film sans Nfo dans le dossier parent
+film sans Nfo dans le dossier enfant
+
+film + nfo , toute images et toute données dans un repertoire
+plusieurs film + nfo , toute images et toute données dans un repertoire
+film + nfo , toute images et toute données dans le dossier parent
+plusieurs film + nfo , toute images et toute données dans le dossier parent
+Nfo sans Film dans le dossier parent
+Nfo sans Film dans un dossier enfant 
+plusieurs Nfo sans Film dans le dossier parent
+plusieurs Nfo sans Film dans un dossier enfant 
+Nfo Invalide non lisible
+
+les nfo et les films sont toujours dans le meme dossier , inutile de chercher dans le parent si on est dans un enfant
+
+
+
+
+
