@@ -3,45 +3,27 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Movie Scanner" Height="900" Width="1400"
-                WindowStartupLocation="CenterScreen"
-        Background="{DynamicResource MaterialDesignPaper}">
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource MaterialDesignBackground}" Icon="/icone.png">
 
     <DockPanel>
-        <Grid x:Name="LoadingOverlay"
-      Background="#AA000000"
-      Visibility="Collapsed"
-      HorizontalAlignment="Stretch"
-      VerticalAlignment="Stretch"
-      Panel.ZIndex="100">
-            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="🔄 Scan en cours..."
-                   Foreground="White"
-                   FontSize="20"
-                   HorizontalAlignment="Center"
-                   Margin="0,0,0,10" />
-                <ProgressBar IsIndeterminate="True" Width="200" Height="20" />
-            </StackPanel>
-        </Grid>
+
         <!-- Menu at the top -->
+        <!-- Menu simple -->
         <Menu DockPanel.Dock="Top" Background="#EEE" Height="30">
             <MenuItem Header="_File">
-                <MenuItem Header="_New" />
-                <MenuItem Header="_Open..." />
-                <Separator />
-                <MenuItem Header="_Exit" />
+                <MenuItem Header="_Exit" Click="ExitMenuItem_Click" />
             </MenuItem>
-            <MenuItem Header="_Edit">
-                <MenuItem Header="_Undo" />
-                <MenuItem Header="_Redo" />
-            </MenuItem>
-            <MenuItem Header="_Help">
-                <MenuItem Header="_About" />
+            <MenuItem Header="_Settings">
+                <MenuItem Header="_Parameters" Click="SettingsMenuItem_Click" />
             </MenuItem>
         </Menu>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
             <TextBox x:Name="SearchBox"
                  VerticalAlignment="Center"
-                 Width="300"
+                 Width="250"
+                 Height="35"
+                 Margin="0,0,20,0"
                  materialDesign:HintAssist.Hint="Rechercher un film..."
                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
                  Padding="30,2,5,2"
@@ -49,11 +31,22 @@
 
             <Button Content="Scanner"
                 Padding="10,5"
-                Width="300"
-                            Command="{Binding ScanMoviesCommand}"
+                Width="120"
+                Height="35"
+                Command="{Binding ScanMoviesCommand}"
                 Foreground="Black"
                 Background="{DynamicResource MaterialDesignSecondaryAccentBrush}"
                 Style="{StaticResource MaterialDesignRaisedButton}" />
+            <!-- Barre de chargement -->
+            <ProgressBar x:Name="ScanProgressBar"
+                 Width="150"
+                 Height="5"
+                 Margin="15,0,0,0"
+                 IsIndeterminate="True"
+                 Visibility="Collapsed"
+                 VerticalAlignment="Center"
+                 Foreground="{DynamicResource PrimaryHueMidBrush}"
+                 Style="{StaticResource MaterialDesignLinearProgressBar}" />
         </StackPanel>
 
         <TabControl>
@@ -73,9 +66,9 @@
                      ItemsSource="{Binding Movies}"
                      SelectedItem="{Binding SelectedMovie, Mode=TwoWay}"
                      Style="{StaticResource MaterialDesignListBox}"
-                     Background="{DynamicResource MaterialDesignCardBackground}"
-                     BorderThickness="0"
+                     Background="{DynamicResource MaterialDesignPaper}"
                      Foreground="{DynamicResource MaterialDesignBody}"
+                     BorderThickness="0"
                      FontSize="12"
                      Margin="10">
                         <ListBox.ItemTemplate>
@@ -116,7 +109,7 @@
                     <ScrollViewer Grid.Column="1" Margin="20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 
                         <!-- Détails du film -->
-                        <materialDesign:Card Margin="20" Padding="20" DataContext="{Binding SelectedMovieNfo}">
+                        <materialDesign:Card Margin="20" Padding="20"  DataContext="{Binding SelectedMovieNfo}">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="250" />
@@ -127,36 +120,35 @@
 
                                 <StackPanel Orientation="Vertical">
                                     <!-- Poster -->
-                                    <TextBlock Text="Poster" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Poster" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" />
                                     <ItemsControl ItemsSource="{Binding Thumbs}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical"/>
+                                                <StackPanel Orientation="Vertical" />
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Image Source="{Binding Url}" Height="350" Stretch="Uniform" Margin="0,0,0,15"/>
+                                                <Image Source="{Binding Url}" Height="350" Stretch="Uniform" Margin="0,0,0,15" />
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
 
                                     <!-- Fanart -->
-                                    <TextBlock Text="Fanart" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,5"/>
+                                    <TextBlock Text="Fanart" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,5" />
                                     <ItemsControl ItemsSource="{Binding Fanart.Thumbs}">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical"/>
+                                                <StackPanel Orientation="Vertical" />
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Image Source="{Binding}" Height="150" Stretch="UniformToFill" Margin="0,0,0,10"/>
+                                                <Image Source="{Binding}" Height="150" Stretch="UniformToFill" Margin="0,0,0,10" />
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </StackPanel>
-
 
                                 <StackPanel Grid.Column="1" Margin="20,0,0,0">
                                     <!-- Titre principal -->

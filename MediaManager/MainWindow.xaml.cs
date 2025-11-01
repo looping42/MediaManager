@@ -26,13 +26,17 @@ namespace MediaManager
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
         private Movie _selectedMovie;
-        private readonly DatabaseService _db;
-        private readonly MovieScanner _scanner;
+        private readonly MovieRepository _movieRepo;
+        private readonly SettingsRepository _settingsRepo;
+        private readonly MovieScanner _movieScanner;
         public ICommand LoadNfoCommand { get; }
         public ICommand ScanMoviesCommand { get; }
 
         public ObservableCollection<Movie> Movies { get; set; } = new();
         private MovieNfo _selectedMovieNfo;
+
+        // --- Binding support (INotifyPropertyChanged) ---
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Movie SelectedMovie
         {
@@ -63,9 +67,12 @@ namespace MediaManager
                 this.Width = 1400;
                 this.Height = 900;
             };
-            _db = new DatabaseService();
-            _scanner = new MovieScanner(_db);
-            Movies = new ObservableCollection<Movie>(_db.GetAllMovies());
+            DatabaseInitializer.Initialize("movies.db");
+            _movieRepo = new MovieRepository();
+            _settingsRepo = new SettingsRepository();
+            _movieScanner = new MovieScanner(_movieRepo);
+            Movies = new ObservableCollection<Movie>(_movieRepo.GetAllMovies());
+
             LoadNfoCommand = new RelayCommand(param => SelectedMovieNfo = LoadSelectedMovieNfo());
             DataContext = this;
 
@@ -77,24 +84,38 @@ namespace MediaManager
         {
             try
             {
-                LoadingOverlay.Visibility = Visibility.Visible;
-                //MessageBox.Show("🚀 Scan des films en cours...", "Scan", MessageBoxButton.OK, MessageBoxImage.Information);
+                ScanProgressBar.Visibility = Visibility.Visible;
+                var paths = _settingsRepo.GetPaths("ScanPaths");
+                if (paths.Count == 0)
+                {
+                    MessageBox.Show("Aucun chemin de scan configuré.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
 
-                var folder = "\\\\192.168.1.12\\Share\\424084BC4084B865"; // plus tard, tu pourras ouvrir un dialogue
-                await Task.Run(() => _scanner.ScanDirectory(folder));
+                // Lancer le scan en parallèle
+                await Task.Run(() =>
+                {
+                    Parallel.ForEach(paths, folder =>
+                    {
+                        try
+                        {
+                            _movieScanner.ScanDirectoryNfoOnly(folder);
+                        }
+                        catch (Exception ex)
+                        {
+                        }
+                    });
+                });
+
                 Movies.Clear();
-                foreach (var m in _db.GetAllMovies())
+                foreach (var m in _movieRepo.GetAllMovies())
                     Movies.Add(m);
             }
             finally
             {
-                // Cache l'overlay même en cas d'erreur
-                LoadingOverlay.Visibility = Visibility.Collapsed;
+                ScanProgressBar.Visibility = Visibility.Collapsed;
             }
         }
-
-        // --- Binding support (INotifyPropertyChanged) ---
-        public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
@@ -103,22 +124,41 @@ namespace MediaManager
         {
             if (SelectedMovie == null) return null;
 
-            var movieFromDb = _db.GetMovieById(SelectedMovie.Id);
+            var movieFromDb = _movieRepo.GetMovieById(SelectedMovie.Id);
             if (movieFromDb == null) return null;
 
             var serializer = new XmlSerializer(typeof(MovieNfo));
-            using var reader = new StreamReader(movieFromDb.NfoPath);
-            MovieNfo movie = (MovieNfo)serializer.Deserialize(reader);
-
-            return movie;
+            try
+            {
+                using var reader = new StreamReader(movieFromDb.NfoUrl);
+                MovieNfo movie = (MovieNfo)serializer.Deserialize(reader);
+                return movie;
+            }
+            catch
+            {
+                // If deserialization fails, just return null and do not render
+                return null;
+            }
         }
 
         private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             var searchText = SearchBox.Text.Trim();
             MoviesList.ItemsSource = string.IsNullOrEmpty(searchText)
-                ? _db.GetAllMovies()
-                : _db.GetAllMovies(searchText);
+                ? _movieRepo.GetAllMovies()
+                : _movieRepo.GetAllMovies(searchText);
+        }
+
+        private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            var settingsWindow = new SettingsWindow();
+            settingsWindow.Owner = this;
+            settingsWindow.ShowDialog();
+        }
+
+        private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 }

@@ -1,0 +1,22 @@
+PI
+Vue d'ensemble
+UpgradeNew!
+Détails
+Sessions
+Statistiques
+Régénérer la clé
+TMDB offers a powerful API service that is free for personal use. Please ensure you attribute TMDB for any images or data you use. You can find the logos for attribution here.
+
+Documentation
+Our primary documentation is located at developer.themoviedb.org.
+
+Assistance
+If you have questions or comments about the information covered here, please create a post on our support forums.
+
+Détails de l'API
+Test your API credentials by clicking here. You can also edit the details of your app by clicking here.
+
+Jeton d'accès en lecture à l'API
+eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIwNTkzNmVkYTAwN2QxMjllMmQ4NWViZWM3YTU1ZjQxMyIsIm5iZiI6MTc2MTk0NjM2Ni4xMDcsInN1YiI6IjY5MDUyYWZlZmZkOWQ2MzExNWRkN2JjYyIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.57cagl2r2dhq59-vHo-kLD-feoCZWrXWWBMRfQiwwng
+Clé d'API
+05936eda007d129e2d85ebec7a55f413

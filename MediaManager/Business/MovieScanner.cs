@@ -19,113 +19,122 @@ namespace MediaManager.Business
 {
     public class MovieScanner
     {
-        private readonly DatabaseService _db;
+        private readonly MovieRepository _movieRepo;
 
-        public MovieScanner(DatabaseService db)
+        public event Action? ScanCompleted;
+
+        public event Action<Movie>? MovieScanned;
+
+        public MovieScanner(MovieRepository movieRepo)
         {
-            _db = db;
+            _movieRepo = movieRepo;
         }
 
-        public void ScanDirectory(string directoryPath)
+        public void ScanDirectoryNfoOnly(string directoryPath)
         {
-            if (!Directory.Exists(directoryPath))
-            {
-                MessageBox.Show("Le dossier spécifié n'existe pas.", "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
-                return;
-            }
-            //var existingNfos = new HashSet<string>(_db.GetAllMovies().Select(m => m.NfoPath));
-            var existingNfos = new HashSet<string>(_db.GetAllMovies().Select(m => m.NfoPath));
+            if (!Directory.Exists(directoryPath)) return;
 
-            int addedCount = 0;
-            int skippedCount = 0;
+            var allMovies = _movieRepo.GetAllMovies();
+            var existingNfos = new HashSet<string>(allMovies.Select(m => m.NfoUrl));
             var moviesToInsert = new List<Movie>();
 
-            //var folders = Directory.EnumerateDirectories(directoryPath).ToList();
-
             var nfoFiles = Directory.EnumerateFiles(directoryPath, "*.nfo", SearchOption.AllDirectories)
-                        .Where(f => !existingNfos.Contains(f));
+                .Where(f => !existingNfos.Contains(f) &&
+                            !f.Contains(".deletedByTMM") &&
+                            !f.Contains(".HomeTheater"));
 
             foreach (var nfoFile in nfoFiles)
             {
-                //var nfoFile = Directory.EnumerateFiles(folder, "*.nfo", SearchOption.TopDirectoryOnly).FirstOrDefault();
-                //if (nfoFile == null)
-                //{
-                //    skippedCount++;
-                //    continue;
-                //}
+                var folder = Path.GetDirectoryName(nfoFile);
+                DateTime lastWrite = Directory.GetLastWriteTimeUtc(folder);
 
-                //if (existingNfos.Contains(nfoFile))
-                //{
-                //    skippedCount++;
-                //    continue;
-                //}
-
-                string title = Path.GetFileNameWithoutExtension(nfoFile);
-                string year = "";
-                string plot = "";
-                string imdbId = "";
-
+                string title = "";
                 using (var reader = XmlReader.Create(nfoFile))
                 {
-                    year = ReadElementSafe(reader, "year");
-                    plot = ReadElementSafe(reader, "plot");
-
-                    // Pour id ou imdbid, lire d'abord id puis imdbid si id est vide
-                    imdbId = ReadElementSafe(reader, "id");
-                    if (string.IsNullOrEmpty(imdbId))
-                        imdbId = ReadElementSafe(reader, "imdbid");
+                    title = ReadElementSafe(reader, "title");
                 }
-
-                //var xml = XDocument.Load(nfoFile);
-                //var title = xml.Root?.Element("title")?.Value ?? Path.GetFileNameWithoutExtension(nfoFile);
-                //var year = xml.Root?.Element("year")?.Value ?? "";
-                //var plot = xml.Root?.Element("plot")?.Value ?? "";
-
-                //var imdbId = xml.Root?.Element("id")?.Value
-                //    ?? xml.Root?.Element("imdbid")?.Value
-                //    ?? "";
-
-                var folder = Path.GetDirectoryName(nfoFile);
-
-                //// Enumerate all files in the folder once
-                //var folderFiles = Directory.EnumerateFiles(folder).ToList();
-
-                //// Find the files in memory instead of hitting disk multiple times
-                //var poster = folder.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && f.Contains("poster", StringComparison.OrdinalIgnoreCase))
-                //             ?? folder.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase));
-
-                //var fanart = folder.FirstOrDefault(f => f.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) && f.Contains("fanart", StringComparison.OrdinalIgnoreCase));
-
-                //var clearLogo = folder.FirstOrDefault(f => f.EndsWith(".png", StringComparison.OrdinalIgnoreCase) && f.Contains("clearlogo", StringComparison.OrdinalIgnoreCase));
-
-                var poster = "";
-                var fanart = "";
-                var clearLogo = "";
 
                 moviesToInsert.Add(new Movie
                 {
                     Title = title,
-                    Year = year,
-                    Plot = plot,
-                    NfoPath = nfoFile,
-                    PosterUrl = poster,
-                    PosterThumb = "",  // small image for ListBox
-                    FanartUrl = fanart,
-                    ClearLogoUrl = clearLogo,
-                    ImdbId = imdbId
+                    Year = "",
+                    FolderUrl = folder,
+                    NfoUrl = nfoFile,
+                    FilmUrl = "",
+                    PosterUrl = "",
+                    FanartUrl = "",
+                    ClearLogoUrl = "",
+                    ThumbsUrl = "",
+                    LastWriteUtc = lastWrite.ToString("o"),
                 });
-                addedCount++;
             }
+            var duplicates = moviesToInsert
+                .GroupBy(m => m.FolderUrl)
+                .Where(g => g.Count() > 1)
+                .Select(g => new { Folder = g.Key, Count = g.Count(), Titles = g.Select(x => x.Title) })
+                .ToList();
 
-            _db.InsertMovie(moviesToInsert);
+            moviesToInsert = moviesToInsert
+                .GroupBy(m => m.FolderUrl)
+                .Select(g => g.First()) // garde un seul élément par dossier
+                .ToList();
 
-            MessageBox.Show(
-           $"Scan terminé ✅\n" +
-           $"{addedCount} nouveau(x) film(s) ajouté(s)\n" +
-           $"{skippedCount} déjà existant(s)",
-           "Scan terminé",
-           MessageBoxButton.OK,
-           MessageBoxImage.Information);
+            _movieRepo.InsertMovies(moviesToInsert);
+
+            // Lance le scan complet en tâche de fond
+            Task.Run(() =>
+            {
+                foreach (var nfoFile in nfoFiles)
+                {
+                    ScanDirectoryMetadata(nfoFile); // récupère images et infos détaillées
+                }
+            });
+        }
+
+        /// <summary>
+        /// Scan complet : lit les NFO et récupère posters, fanart, etc.
+        /// </summary>
+        private void ScanDirectoryMetadata(string nfoFile)
+        {
+            try
+            {
+                var folder = Path.GetDirectoryName(nfoFile);
+                DateTime lastWrite = Directory.GetLastWriteTimeUtc(folder);
+
+                string title = "";
+                string year = "";
+
+                using (var reader = XmlReader.Create(nfoFile))
+                {
+                    title = ReadElementSafe(reader, "title");
+                    year = ReadElementSafe(reader, "year");
+                }
+
+                if (string.IsNullOrEmpty(title)) return;
+
+                var files = Directory.GetFiles(folder);
+
+                var movie = new Movie
+                {
+                    Title = title,
+                    Year = year,
+                    FolderUrl = folder,
+                    NfoUrl = nfoFile,
+                    FilmUrl = files.FirstOrDefault(f => f.EndsWith(".mkv") || f.EndsWith(".mp4")) ?? "",
+                    PosterUrl = files.FirstOrDefault(f => f.ToLower().Contains("poster")) ?? "",
+                    FanartUrl = files.FirstOrDefault(f => f.ToLower().Contains("fanart")) ?? "",
+                    ClearLogoUrl = files.FirstOrDefault(f => f.ToLower().Contains("clearlogo")) ?? "",
+                    ThumbsUrl = files.FirstOrDefault(f => f.ToLower().Contains("thumb")) ?? "",
+                    LastWriteUtc = lastWrite.ToString("o"),
+                };
+
+                _movieRepo.UpdateMovie(movie); // méthode qui update ou insert
+
+            }
+            catch
+            {
+                // ignorer les erreurs
+            }
         }
 
         private string ReadElementSafe(XmlReader reader, string elementName)
