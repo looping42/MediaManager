@@ -25,7 +25,7 @@ namespace MediaManager.Data
                         Id INTEGER PRIMARY KEY AUTOINCREMENT,
                         Title TEXT,
                         Year TEXT,
-                        FolderUrl TEXT UNIQUE,
+                        FolderUrl TEXT,
                         NfoUrl TEXT UNIQUE,
                         FilmUrl TEXT,
                         PosterUrl TEXT,

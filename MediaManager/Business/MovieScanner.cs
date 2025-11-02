@@ -25,14 +25,20 @@ namespace MediaManager.Business
 
         public event Action<Movie>? MovieScanned;
 
-        public MovieScanner(MovieRepository movieRepo)
+        private readonly Action<string> _log;
+
+        public MovieScanner(MovieRepository movieRepo, Action<string> log)
         {
             _movieRepo = movieRepo;
+            _log = log;
         }
 
         public void ScanDirectoryNfoOnly(string directoryPath)
         {
-            if (!Directory.Exists(directoryPath)) return;
+            if (!Directory.Exists(directoryPath))
+            {
+                _log?.Invoke($"Folder not found: {directoryPath}");
+            }
 
             var allMovies = _movieRepo.GetAllMovies();
             var existingNfos = new HashSet<string>(allMovies.Select(m => m.NfoUrl));
@@ -44,7 +50,7 @@ namespace MediaManager.Business
                             !f.Contains(".HomeTheater"));
 
             var moviesByNfo = allMovies.ToDictionary(m => m.NfoUrl, m => m);
-
+            var validNfoFiles = new List<string>();
             foreach (var nfoFile in nfoFiles)
             {
                 var folder = Path.GetDirectoryName(nfoFile);
@@ -61,10 +67,22 @@ namespace MediaManager.Business
                     }
                 }
 
+                if (!File.Exists(nfoFile))
+                {
+                    _log?.Invoke($"NFO not found ignored : {nfoFile}");
+                    return;
+                }
+
                 string title = "";
                 using (var reader = XmlReader.Create(nfoFile))
                 {
                     title = ReadElementSafe(reader, "title");
+                }
+
+                if (string.IsNullOrWhiteSpace(title))
+                {
+                    _log?.Invoke($"NFO invalid ignored: {Path.GetFileName(nfoFile)}");
+                    continue;
                 }
 
                 moviesToInsert.Add(new Movie
@@ -80,27 +98,41 @@ namespace MediaManager.Business
                     ThumbsUrl = "",
                     LastWriteUtc = lastWrite.ToString("o"),
                 });
+                validNfoFiles.Add(nfoFile);
             }
-            var duplicates = moviesToInsert
-                .GroupBy(m => m.FolderUrl)
-                .Where(g => g.Count() > 1)
-                .Select(g => new { Folder = g.Key, Count = g.Count(), Titles = g.Select(x => x.Title) })
-                .ToList();
+            //var duplicates = moviesToInsert
+            //    .GroupBy(m => m.FolderUrl)
+            //    .Where(g => g.Count() > 1)
+            //    .Select(g => new { Folder = g.Key, Count = g.Count(), Titles = g.Select(x => x.Title) })
+            //    .ToList();
 
-            moviesToInsert = moviesToInsert
-                .GroupBy(m => m.FolderUrl)
-                .Select(g => g.First()) // garde un seul élément par dossier
-                .ToList();
+            //moviesToInsert = moviesToInsert
+            //    .GroupBy(m => m.FolderUrl)
+            //    .Select(g => g.First()) // garde un seul élément par dossier
+            //    .ToList();
 
             _movieRepo.InsertMovies(moviesToInsert);
 
-            // Lance le scan complet en tâche de fond
+            //Lance le scan complet en tâche de fond
             Task.Run(() =>
             {
-                foreach (var nfoFile in nfoFiles)
+                foreach (var nfoFile in validNfoFiles)
                 {
                     ScanDirectoryMetadata(nfoFile); // récupère images et infos détaillées
                 }
+
+                //// 🔹 Étape 2 : recherche des films sans NFO en tâche de fond
+                //foreach (var folder in directoryPath)
+                //{
+                //    try
+                //    {
+                //        _movieScanner.ScanUnidentifiedMovies(folder); // nouvelle méthode dédiée
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        Log($"Erreur détection films sans NFO dans {folder}: {ex.Message}");
+                //    }
+                //}
             });
         }
 
@@ -143,8 +175,9 @@ namespace MediaManager.Business
 
                 _movieRepo.UpdateMovie(movie); // méthode qui update ou insert
             }
-            catch
+            catch (Exception ex)
             {
+                _log?.Invoke($"Error: {ex.ToString()}");
                 // ignorer les erreurs
             }
         }
@@ -158,9 +191,9 @@ namespace MediaManager.Business
                     return reader.ReadElementContentAsString() ?? "";
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore erreurs de lecture
+                //_log?.Invoke($"Error reader: {ex.ToString()}");
             }
             return "";
         }

@@ -4,6 +4,7 @@ using MediaManager.Models;
 using MediaManager.NewFolder;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -38,7 +39,7 @@ namespace MediaManager
         public event PropertyChangedEventHandler PropertyChanged;
 
         // Callback pour log
-        public Action<string>? LogCallback { get; set; }
+        public Action<string> LogCallback { get; set; }
 
         public Movie SelectedMovie
         {
@@ -77,7 +78,8 @@ namespace MediaManager
             DatabaseInitializer.Initialize("movies.db");
             _movieRepo = new MovieRepository();
             _settingsRepo = new SettingsRepository();
-            _movieScanner = new MovieScanner(_movieRepo);
+            LogCallback = LogMessage;
+            _movieScanner = new MovieScanner(_movieRepo, LogCallback);
             Movies = new ObservableCollection<Movie>(_movieRepo.GetAllMovies());
 
             LoadNfoCommand = new RelayCommand(param => SelectedMovieNfo = LoadSelectedMovieNfo());
@@ -85,7 +87,6 @@ namespace MediaManager
 
             // Initialisation de la commande du bouton
             ScanMoviesCommand = new RelayCommand(ScanMovies);
-            LogCallback = LogMessage;
         }
 
         private async void ScanMovies(object parameter)
@@ -113,9 +114,11 @@ namespace MediaManager
                         }
                         catch (Exception ex)
                         {
+                            Log(ex.ToString());
                         }
                     });
                 });
+                Log($"End Scan");
 
                 Movies.Clear();
                 foreach (var m in _movieRepo.GetAllMovies())
@@ -179,6 +182,26 @@ namespace MediaManager
                 ScanLogTextBox.AppendText($"{DateTime.Now:HH:mm:ss} - {message}\n");
                 ScanLogTextBox.ScrollToEnd();
             });
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            try
+            {
+                // Ouvre le lien dans le navigateur par défaut
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = e.Uri.AbsoluteUri,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Impossible d'ouvrir le lien : {ex.Message}");
+            }
+
+            e.Handled = true;
         }
     }
 }

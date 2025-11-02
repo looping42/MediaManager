@@ -51,7 +51,7 @@
         <!-- Log en bas -->
         <TextBox x:Name="ScanLogTextBox"
          DockPanel.Dock="Bottom"
-         Height="150"
+         Height="200"
          Margin="10"
          VerticalScrollBarVisibility="Auto"
          HorizontalScrollBarVisibility="Auto"
@@ -172,18 +172,29 @@
                                    Foreground="{DynamicResource MaterialDesignBodyMediumBrush}"
                                    Margin="0,0,0,10" />
 
-                                    <!-- Année et durée -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <!-- 🔹 Tagline -->
+                                    <TextBlock Text="{Binding Tagline}"
+                                       FontStyle="Italic"
+                                       Foreground="Gray"
+                                       FontSize="13"
+                                       Margin="0,0,0,10" />
+
+                                    <!-- 🔹 Année / Durée / Pays / Source -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
                                         <TextBlock Text="{Binding Year}" FontWeight="Bold" />
                                         <TextBlock Text=" • " Margin="5,0" />
                                         <TextBlock Text="{Binding Runtime, StringFormat={}{0} min}" />
+                                        <TextBlock Text=" • " Margin="5,0" />
+                                        <TextBlock Text="{Binding Source}" />
+                                        <TextBlock Text=" • " Margin="5,0" />
+                                        <TextBlock Text="{Binding Countries[0]}" />
                                     </StackPanel>
 
-                                    <!-- Notes -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                    <!-- 🔹 Note et votes -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,15,0,10">
                                         <materialDesign:PackIcon Kind="Star" Foreground="Gold" Width="18" Height="18" />
-                                        <TextBlock Text="{Binding Ratings[0].Value, StringFormat={}{0}/10}" FontWeight="Bold" Margin="5,0" />
-                                        <TextBlock Text="  (IMDb)" Foreground="Gray" VerticalAlignment="Bottom" />
+                                        <TextBlock Text="{Binding Notes, StringFormat={}{0:N1}/10}" FontWeight="Bold" Margin="5,0" />
+                                        <TextBlock Text="{Binding Votes, StringFormat={} ({0} votes)}" Foreground="Gray" Margin="5,0" />
                                     </StackPanel>
 
                                     <!-- Genres -->
@@ -192,9 +203,9 @@
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border CornerRadius="15"
-                                    Background="{DynamicResource MaterialDesignPaperBrush}"
-                                    Margin="2"
-                                    Padding="6,2">
+                                                        Background="{DynamicResource MaterialDesignPaperBrush}"
+                                                        Margin="2"
+                                                        Padding="6,2">
                                                         <TextBlock Text="{Binding}" FontSize="12" />
                                                     </Border>
                                                 </DataTemplate>
@@ -206,17 +217,38 @@
                                     <TextBlock Text="Résumé :" FontWeight="Bold" Margin="0,15,0,5" />
                                     <ScrollViewer Height="120" VerticalScrollBarVisibility="Auto">
                                         <TextBlock Text="{Binding Plot}"
-                           TextWrapping="Wrap"
-                           FontSize="13"
-                           Foreground="{DynamicResource MaterialDesignBodyMediumBrush}" />
+                                           TextWrapping="Wrap"
+                                           FontSize="13"
+                                           Foreground="{DynamicResource MaterialDesignBodyMediumBrush}" />
                                     </ScrollViewer>
+
+                                    <!-- 🔹 Studios -->
+                                    <TextBlock Text="Studios :" FontWeight="Bold" Margin="0,15,0,5" />
+                                    <ItemsControl ItemsSource="{Binding Studios}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Vertical" ItemWidth="120"  MaxHeight="220"  />
+                                                <!-- Largeur d'une colonne -->
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock FontSize="13" Text="{Binding}" Margin="0,2" />
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
 
                                     <!-- Réalisateurs -->
                                     <TextBlock Text="Réalisateurs :" FontWeight="Bold" Margin="0,15,0,5" />
                                     <ItemsControl ItemsSource="{Binding Directors}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Vertical" ItemWidth="120"   MaxHeight="220" />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Name, StringFormat=• {0}}" FontSize="13" />
+                                                <TextBlock Text="{Binding Name}" FontSize="13" Margin="0,2" />
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -224,12 +256,63 @@
                                     <!-- Acteurs -->
                                     <TextBlock Text="Acteurs principaux :" FontWeight="Bold" Margin="0,15,0,5" />
                                     <ItemsControl ItemsSource="{Binding Actors}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <WrapPanel Orientation="Vertical" ItemWidth="120"  MaxHeight="220"  />
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <TextBlock Text="{Binding Name, StringFormat=• {0}}" FontSize="13" />
+                                                <TextBlock Text="{Binding Name}" FontSize="13" Margin="0,2" />
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+
+                                    <!-- 🔹 Bande-annonce -->
+                                    <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                        <TextBlock Text="🎬 Bande-annonce : " FontWeight="Bold" />
+                                        <TextBlock>
+                                            <Hyperlink NavigateUri="{Binding Trailer}" RequestNavigate="Hyperlink_RequestNavigate">
+                                                <Run Text="Ouvrir dans YouTube" />
+                                            </Hyperlink>
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <!-- 🔹 Détails techniques -->
+                                    <GroupBox Header="Informations techniques" Margin="0,20,0,0">
+                                        <StackPanel Margin="8">
+
+                                            <!-- Vidéo -->
+                                            <TextBlock Text="Vidéo :" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                            <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Videos}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Codec, StringFormat=• Codec : {0}}" FontSize="13" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <!-- Audio -->
+                                            <TextBlock Text="Audio :" FontWeight="SemiBold" Margin="0,8,0,4" />
+                                            <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Audios}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Language, StringFormat=• {0} ({Binding Codec})}" FontSize="13" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
+                                            <!-- Sous-titres -->
+                                            <TextBlock Text="Sous-titres :" FontWeight="SemiBold" Margin="0,8,0,4" />
+                                            <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Subtitles}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Language, StringFormat=• {0}}" FontSize="13" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </GroupBox>
                                 </StackPanel>
                             </Grid>
                         </materialDesign:Card>

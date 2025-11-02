@@ -19,6 +19,9 @@ namespace MediaManager.Models
         [XmlElement("originaltitle")]
         public string OriginalTitle { get; set; }
 
+        [XmlElement("source")]
+        public string Source { get; set; }
+
         [XmlElement("sorttitle")]
         public string SortTitle { get; set; }
 
@@ -34,6 +37,12 @@ namespace MediaManager.Models
 
         [XmlElement("userrating")]
         public double UserRating { get; set; }
+
+        [XmlIgnore]
+        public int Votes => Ratings.FirstOrDefault()?.Votes ?? 0;
+
+        [XmlIgnore]
+        public double Notes => Ratings.FirstOrDefault()?.Value ?? 0;
 
         [XmlElement("top250")]
         public int Top250 { get; set; }
@@ -200,4 +209,64 @@ namespace MediaManager.Models
         [XmlElement("tmdbid")]
         public string TmdbId { get; set; }
     }
+
+
+    public class FileInfo
+    {
+        [XmlElement("streamdetails")]
+        public StreamDetails StreamDetails { get; set; } = new StreamDetails();
+    }
+
+    public class StreamDetails
+    {
+        [XmlElement("video")]
+        public List<VideoStream> Videos { get; set; } = new List<VideoStream>();
+
+        [XmlElement("audio")]
+        public List<AudioStream> Audios { get; set; } = new List<AudioStream>();
+
+        [XmlElement("subtitle")]
+        public List<SubtitleStream> Subtitles { get; set; } = new List<SubtitleStream>();
+    }
+
+    public class VideoStream
+    {
+        [XmlElement("codec")]
+        public string Codec { get; set; }
+
+        [XmlElement("aspect")]
+        public string Aspect { get; set; }
+
+        [XmlElement("width")]
+        public int Width { get; set; }
+
+        [XmlElement("height")]
+        public int Height { get; set; }
+
+        [XmlElement("hdrtype")]
+        public string HdrType { get; set; }
+
+        [XmlElement("durationinseconds")]
+        public int DurationInSeconds { get; set; }
+    }
+
+    public class AudioStream
+    {
+        [XmlElement("codec")]
+        public string Codec { get; set; }
+
+        [XmlElement("language")]
+        public string Language { get; set; }
+
+        [XmlElement("channels")]
+        public int Channels { get; set; }
+    }
+
+    public class SubtitleStream
+    {
+        [XmlElement("language")]
+        public string Language { get; set; }
+    }
+
+
 }
