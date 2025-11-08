@@ -23,8 +23,6 @@ namespace MediaManager
     public partial class SettingsWindow : Window
     {
         private readonly SettingsRepository _settingsRepo;
-        private const string ScanPathsKey = "ScanPaths";
-        private const string ApiKeyKey = "ApiKey";
 
         public SettingsWindow()
         {
@@ -32,16 +30,16 @@ namespace MediaManager
 
             _settingsRepo = new SettingsRepository();
 
-            ApiKeyTextBox.Text = _settingsRepo.Get(ApiKeyKey) ?? "";
+            ApiKeyTextBox.Text = _settingsRepo.Get(ConstantSettings.ApiKeyKey) ?? "";
 
-            var paths = _settingsRepo.GetPaths(ScanPathsKey);
+            var paths = _settingsRepo.GetPaths(ConstantSettings.ScanPathsKey);
             PathsTextBox.Text = string.Join(Environment.NewLine, paths);
         }
 
         private void SaveAllButton_Click(object sender, RoutedEventArgs e)
         {
             // Sauvegarde clé API
-            _settingsRepo.Save(ApiKeyKey, ApiKeyTextBox.Text.Trim());
+            _settingsRepo.Save(ConstantSettings.ApiKeyKey, ApiKeyTextBox.Text.Trim());
 
             // Sauvegarde chemins
             var paths = PathsTextBox.Text
@@ -49,9 +47,15 @@ namespace MediaManager
                 .Select(p => p.Trim())
                 .ToList();
 
-            _settingsRepo.SavePaths(ScanPathsKey, paths);
+            _settingsRepo.SavePaths(ConstantSettings.ScanPathsKey, paths);
 
-            MessageBox.Show("Clé API et chemins enregistrés ✅", "OK", MessageBoxButton.OK, MessageBoxImage.Information);
+            var ignoredPaths = IgnoredPathsTextBox.Text
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(p => p.Trim())
+                .ToList();
+            _settingsRepo.SavePaths(ConstantSettings.IgnoredPath, ignoredPaths);
+
+            MessageBox.Show("Enregistrement ✅", "OK", MessageBoxButton.OK, MessageBoxImage.Information);
             Close();
         }
     }

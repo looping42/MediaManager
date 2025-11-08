@@ -118,6 +118,8 @@ namespace MediaManager.Models
 
         [XmlElement("actor")]
         public List<Actor> Actors { get; set; } = new();
+
+        public bool HasSelectedMovie => !string.IsNullOrWhiteSpace(Title);
     }
 
     public class Rating
@@ -210,7 +212,6 @@ namespace MediaManager.Models
         public string TmdbId { get; set; }
     }
 
-
     public class FileInfo
     {
         [XmlElement("streamdetails")]
@@ -267,6 +268,4 @@ namespace MediaManager.Models
         [XmlElement("language")]
         public string Language { get; set; }
     }
-
-
 }

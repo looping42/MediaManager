@@ -1,4 +1,5 @@
 ﻿using MediaManager.Data;
+using MediaManager.Logger;
 using MediaManager.Models;
 using System;
 using System.Collections.Concurrent;
@@ -25,29 +26,30 @@ namespace MediaManager.Business
 
         public event Action<Movie>? MovieScanned;
 
-        private readonly Action<string> _log;
+        private readonly IUiLogger _logger;
+        private readonly SettingsRepository _settingsRepo;
 
-        public MovieScanner(MovieRepository movieRepo, Action<string> log)
+        public MovieScanner(MovieRepository movieRepo, SettingsRepository settingsRepo, IUiLogger logger)
         {
             _movieRepo = movieRepo;
-            _log = log;
+            _settingsRepo = settingsRepo;
+            _logger = logger;
         }
 
         public void ScanDirectoryNfoOnly(string directoryPath)
         {
             if (!Directory.Exists(directoryPath))
             {
-                _log?.Invoke($"Folder not found: {directoryPath}");
+                _logger.Log($"Folder not found: {directoryPath}");
             }
+            var ignoredPath = _settingsRepo.GetPaths(ConstantSettings.IgnoredPath);
 
             var allMovies = _movieRepo.GetAllMovies();
             var existingNfos = new HashSet<string>(allMovies.Select(m => m.NfoUrl));
             var moviesToInsert = new List<Movie>();
 
             var nfoFiles = Directory.EnumerateFiles(directoryPath, "*.nfo", SearchOption.AllDirectories)
-                .Where(f => !existingNfos.Contains(f) &&
-                            !f.Contains(".deletedByTMM") &&
-                            !f.Contains(".HomeTheater"));
+                .Where(f => !existingNfos.Contains(f) && !ignoredPath.Contains(f));
 
             var moviesByNfo = allMovies.ToDictionary(m => m.NfoUrl, m => m);
             var validNfoFiles = new List<string>();
@@ -69,8 +71,8 @@ namespace MediaManager.Business
 
                 if (!File.Exists(nfoFile))
                 {
-                    _log?.Invoke($"NFO not found ignored : {nfoFile}");
-                    return;
+                    _logger.Log($"NFO not found ignored : {nfoFile}");
+                    continue;
                 }
 
                 string title = "";
@@ -81,7 +83,7 @@ namespace MediaManager.Business
 
                 if (string.IsNullOrWhiteSpace(title))
                 {
-                    _log?.Invoke($"NFO invalid ignored: {Path.GetFileName(nfoFile)}");
+                    _logger.Log($"NFO invalid ignored: {Path.GetFileName(nfoFile)}");
                     continue;
                 }
 
@@ -97,42 +99,22 @@ namespace MediaManager.Business
                     ClearLogoUrl = "",
                     ThumbsUrl = "",
                     LastWriteUtc = lastWrite.ToString("o"),
+                    IsIdentified = true
                 });
                 validNfoFiles.Add(nfoFile);
             }
-            //var duplicates = moviesToInsert
-            //    .GroupBy(m => m.FolderUrl)
-            //    .Where(g => g.Count() > 1)
-            //    .Select(g => new { Folder = g.Key, Count = g.Count(), Titles = g.Select(x => x.Title) })
-            //    .ToList();
-
-            //moviesToInsert = moviesToInsert
-            //    .GroupBy(m => m.FolderUrl)
-            //    .Select(g => g.First()) // garde un seul élément par dossier
-            //    .ToList();
 
             _movieRepo.InsertMovies(moviesToInsert);
 
             //Lance le scan complet en tâche de fond
             Task.Run(() =>
             {
+                ScanUnidentifiedMovies(directoryPath);
+
                 foreach (var nfoFile in validNfoFiles)
                 {
                     ScanDirectoryMetadata(nfoFile); // récupère images et infos détaillées
                 }
-
-                //// 🔹 Étape 2 : recherche des films sans NFO en tâche de fond
-                //foreach (var folder in directoryPath)
-                //{
-                //    try
-                //    {
-                //        _movieScanner.ScanUnidentifiedMovies(folder); // nouvelle méthode dédiée
-                //    }
-                //    catch (Exception ex)
-                //    {
-                //        Log($"Erreur détection films sans NFO dans {folder}: {ex.Message}");
-                //    }
-                //}
             });
         }
 
@@ -177,8 +159,59 @@ namespace MediaManager.Business
             }
             catch (Exception ex)
             {
-                _log?.Invoke($"Error: {ex.ToString()}");
+                _logger.Log($"Error: {ex.ToString()}");
                 // ignorer les erreurs
+            }
+        }
+
+        public void ScanUnidentifiedMovies(string directoryPath)
+        {
+            if (!Directory.Exists(directoryPath)) return;
+
+            var allMovies = _movieRepo.GetAllMovies();
+            var existingFolders = new HashSet<string>(allMovies.Select(m => m.FolderUrl));
+            var existingTitles = new HashSet<string>(allMovies.Select(m => m.Title), StringComparer.OrdinalIgnoreCase);
+
+            var moviesToInsert = new List<Movie>();
+            var ignoredPath = _settingsRepo.GetPaths(ConstantSettings.IgnoredPath);
+
+            var files = Directory.EnumerateFiles(directoryPath, "*", SearchOption.AllDirectories)
+                    .Where(f => !ignoredPath.Contains(f));
+
+            foreach (var folder in files)
+            {
+                // Ignorer si déjà dans la DB
+                if (existingFolders.Contains(folder)) continue;
+
+                var videoFile = Directory.GetFiles(folder)
+                    .FirstOrDefault(f => f.EndsWith(".mkv") || f.EndsWith(".mp4"));
+
+                if (videoFile != null)
+                {
+                    var title = Path.GetFileName(folder);
+
+                    // Vérifier si un film avec ce titre existe déjà
+                    if (existingTitles.Contains(title)) continue;
+
+                    var movie = new Movie
+                    {
+                        Title = title,
+                        Year = "",
+                        FolderUrl = folder,
+                        NfoUrl = null,  // Aucun NFO
+                        FilmUrl = videoFile,
+                        PosterUrl = "",
+                        FanartUrl = "",
+                        ClearLogoUrl = "",
+                        ThumbsUrl = "",
+                        LastWriteUtc = Directory.GetLastWriteTimeUtc(folder).ToString("o"),
+                        IsIdentified = false
+                    };
+
+                    moviesToInsert.Add(movie);
+                    _logger.Log($"Movie non identifié ajouté : {movie.Title}");
+                }
+                _movieRepo.InsertMovies(moviesToInsert);
             }
         }
 

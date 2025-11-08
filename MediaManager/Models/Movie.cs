@@ -23,5 +23,7 @@ namespace MediaManager.Models
         public string ThumbsUrl { get; set; }   // ThumbsUrl TEXT
 
         public string LastWriteUtc { get; set; }// LastWriteUtc TEXT
+
+        public bool IsIdentified { get; set; }// LastWriteUtc TEXT
     }
 }

@@ -4,22 +4,47 @@
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
         Title="Movie Scanner" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen"
+        materialDesign:ColorZoneAssist.Mode="PrimaryLight"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        ResizeMode="CanResize"
         Background="{DynamicResource MaterialDesignBackground}" Icon="/icone.png">
 
-    <DockPanel>
+    <WindowChrome.WindowChrome>
+        <WindowChrome
+            CaptionHeight="0"
+            ResizeBorderThickness="5"
+            GlassFrameThickness="0"
+            CornerRadius="0" />
+    </WindowChrome.WindowChrome>
+    <materialDesign:DrawerHost>
+        <Grid Background="{DynamicResource MaterialDesignPaper}">
+            <DockPanel>
 
-        <!-- Menu at the top -->
-        <!-- Menu simple -->
-        <Menu DockPanel.Dock="Top" Background="#EEE" Height="30">
-            <MenuItem Header="_File">
-                <MenuItem Header="_Exit" Click="ExitMenuItem_Click" />
-            </MenuItem>
-            <MenuItem Header="_Settings">
-                <MenuItem Header="_Parameters" Click="SettingsMenuItem_Click" />
-            </MenuItem>
-        </Menu>
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
-            <TextBox x:Name="SearchBox"
+                <materialDesign:ColorZone Mode="PrimaryDark" DockPanel.Dock="Top" Height="50">
+                    <DockPanel>
+                        <!-- Titre à gauche -->
+                        <TextBlock Text="🎬 Movie Scanner"
+                   VerticalAlignment="Center"
+                   Margin="16,0"
+                   Foreground="White"
+                   FontSize="18"
+                   FontWeight="Bold" />
+
+                        <!-- Actions à droite -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
+                            <Button Style="{StaticResource MaterialDesignToolButton}" ToolTip="Paramètres" Click="SettingsMenuItem_Click">
+                                <materialDesign:PackIcon Kind="Cog" Foreground="White" />
+                            </Button>
+                            <Button Style="{StaticResource MaterialDesignToolButton}" ToolTip="Quitter" Click="ExitMenuItem_Click">
+                                <materialDesign:PackIcon Kind="Close" Foreground="White" />
+                            </Button>
+                        </StackPanel>
+                    </DockPanel>
+                </materialDesign:ColorZone>
+
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
+                    <TextBox x:Name="SearchBox"
                  VerticalAlignment="Center"
                  Width="250"
                  Height="35"
@@ -29,7 +54,7 @@
                  Padding="30,2,5,2"
                  TextChanged="SearchBox_TextChanged" />
 
-            <Button Content="Scanner"
+                    <Button Content="Scanner"
                 Padding="10,5"
                 Width="120"
                 Height="35"
@@ -37,8 +62,8 @@
                 Foreground="Black"
                 Background="{DynamicResource MaterialDesignSecondaryAccentBrush}"
                 Style="{StaticResource MaterialDesignRaisedButton}" />
-            <!-- Barre de chargement -->
-            <ProgressBar x:Name="ScanProgressBar"
+                    <!-- Barre de chargement -->
+                    <ProgressBar x:Name="ScanProgressBar"
                  Width="150"
                  Height="5"
                  Margin="15,0,0,0"
@@ -47,9 +72,9 @@
                  VerticalAlignment="Center"
                  Foreground="{DynamicResource PrimaryHueMidBrush}"
                  Style="{StaticResource MaterialDesignLinearProgressBar}" />
-        </StackPanel>
-        <!-- Log en bas -->
-        <TextBox x:Name="ScanLogTextBox"
+                </StackPanel>
+                <!-- Log en bas -->
+                <TextBox x:Name="ScanLogTextBox"
          DockPanel.Dock="Bottom"
          Height="200"
          Margin="10"
@@ -58,20 +83,20 @@
          IsReadOnly="True"
          TextWrapping="Wrap"
          Background="{DynamicResource MaterialDesignPaper}" />
-        <TabControl>
-            <!-- Premier onglet : Films -->
-            <TabItem Header="Films">
-                <!-- Contenu principal -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="280" />
-                        <!-- Liste à gauche -->
-                        <ColumnDefinition Width="*" />
-                        <!-- Détail à droite -->
-                    </Grid.ColumnDefinitions>
+                <TabControl>
+                    <!-- Premier onglet : Films -->
+                    <TabItem Header="Films">
+                        <!-- Contenu principal -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="280" />
+                                <!-- Liste à gauche -->
+                                <ColumnDefinition Width="*" />
+                                <!-- Détail à droite -->
+                            </Grid.ColumnDefinitions>
 
-                    <!-- Liste de films -->
-                    <ListBox x:Name="MoviesList"
+                            <!-- Liste de films -->
+                            <ListBox x:Name="MoviesList"
                      ItemsSource="{Binding Movies}"
                      SelectedItem="{Binding SelectedMovie, Mode=TwoWay}"
                      Style="{StaticResource MaterialDesignListBox}"
@@ -80,248 +105,250 @@
                      BorderThickness="0"
                      FontSize="12"
                      Margin="10">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
 
-                                        <ColumnDefinition Width="*" />
-                                        <!-- Colonne pour le titre -->
-                                    </Grid.ColumnDefinitions>
-                                    <!-- Titre du film -->
-                                    <TextBlock Grid.Column="1"
+                                                <ColumnDefinition Width="*" />
+                                                <!-- Colonne pour le titre -->
+                                            </Grid.ColumnDefinitions>
+                                            <!-- Titre du film -->
+                                            <TextBlock Grid.Column="1"
                                        Text="{Binding Title}"
                                        VerticalAlignment="Center"
                                        FontSize="12"
                                        TextTrimming="CharacterEllipsis"
                                        Margin="10,0" />
-                                </Grid>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem">
-                                <Setter Property="Padding" Value="0" />
-                                <Setter Property="Margin" Value="0" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                                <Style.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
-                                    </Trigger>
-                                    <Trigger Property="IsSelected" Value="True">
-                                        <Setter Property="Background" Value="{DynamicResource MaterialDesignSecondaryBrush}" />
-                                        <Setter Property="Foreground" Value="Black" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ListBox.ItemContainerStyle>
-                    </ListBox>
-                    <ScrollViewer Grid.Column="1" Margin="20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                                <ListBox.ItemContainerStyle>
+                                    <Style TargetType="ListBoxItem">
+                                        <Setter Property="Padding" Value="0" />
+                                        <Setter Property="Margin" Value="0" />
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
+                                            </Trigger>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource MaterialDesignSecondaryBrush}" />
+                                                <Setter Property="Foreground" Value="Black" />
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                            </ListBox>
+                            <ScrollViewer Grid.Column="1" Margin="20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
 
-                        <!-- Détails du film -->
-                        <materialDesign:Card Margin="20" Padding="20"  DataContext="{Binding SelectedMovieNfo}">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="250" />
-                                    <!-- Affiche -->
-                                    <ColumnDefinition Width="*" />
-                                    <!-- Infos -->
-                                </Grid.ColumnDefinitions>
+                                <!-- Détails du film -->
+                                <materialDesign:Card Margin="20" Padding="20"  DataContext="{Binding SelectedMovieNfo}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="250" />
+                                            <!-- Affiche -->
+                                            <ColumnDefinition Width="*" />
+                                            <!-- Infos -->
+                                        </Grid.ColumnDefinitions>
 
-                                <StackPanel Orientation="Vertical">
-                                    <!-- Poster -->
-                                    <TextBlock Text="Poster" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" />
-                                    <ItemsControl ItemsSource="{Binding Thumbs}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Image Source="{Binding Url}" Height="350" Stretch="Uniform" Margin="0,0,0,15" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                        <StackPanel Orientation="Vertical">
+                                            <!-- Poster -->
+                                            <TextBlock Text="Poster" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" />
+                                            <ItemsControl ItemsSource="{Binding Thumbs}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Vertical" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Image Source="{Binding Url}" Height="350" Stretch="Uniform" Margin="0,0,0,15" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                    <!-- Fanart -->
-                                    <TextBlock Text="Fanart" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,5" />
-                                    <ItemsControl ItemsSource="{Binding Fanart.Thumbs}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <StackPanel Orientation="Vertical" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <Image Source="{Binding}" Height="150" Stretch="UniformToFill" Margin="0,0,0,10" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </StackPanel>
+                                            <!-- Fanart -->
+                                            <TextBlock Text="Fanart" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,5" />
+                                            <ItemsControl ItemsSource="{Binding Fanart.Thumbs}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Orientation="Vertical" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Image Source="{Binding}" Height="150" Stretch="UniformToFill" Margin="0,0,0,10" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
 
-                                <StackPanel Grid.Column="1" Margin="20,0,0,0">
-                                    <!-- Titre principal -->
-                                    <TextBlock Text="{Binding Title}"
+                                        <StackPanel Grid.Column="1" Margin="20,0,0,0">
+                                            <!-- Titre principal -->
+                                            <TextBlock Text="{Binding Title}"
                                    FontSize="26"
                                    FontWeight="Bold"
                                    TextWrapping="Wrap" />
 
-                                    <!-- Sous-titre -->
-                                    <TextBlock Text="{Binding OriginalTitle}"
+                                            <!-- Sous-titre -->
+                                            <TextBlock Text="{Binding OriginalTitle}"
                                    FontStyle="Italic"
                                    Foreground="{DynamicResource MaterialDesignBodyMediumBrush}"
                                    Margin="0,0,0,10" />
 
-                                    <!-- 🔹 Tagline -->
-                                    <TextBlock Text="{Binding Tagline}"
+                                            <!-- 🔹 Tagline -->
+                                            <TextBlock Text="{Binding Tagline}"
                                        FontStyle="Italic"
                                        Foreground="Gray"
                                        FontSize="13"
                                        Margin="0,0,0,10" />
 
-                                    <!-- 🔹 Année / Durée / Pays / Source -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
-                                        <TextBlock Text="{Binding Year}" FontWeight="Bold" />
-                                        <TextBlock Text=" • " Margin="5,0" />
-                                        <TextBlock Text="{Binding Runtime, StringFormat={}{0} min}" />
-                                        <TextBlock Text=" • " Margin="5,0" />
-                                        <TextBlock Text="{Binding Source}" />
-                                        <TextBlock Text=" • " Margin="5,0" />
-                                        <TextBlock Text="{Binding Countries[0]}" />
-                                    </StackPanel>
+                                            <!-- 🔹 Année / Durée / Pays / Source -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,10" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Year}" FontWeight="Bold" />
+                                                <TextBlock Text=" • " Margin="5,0" />
+                                                <TextBlock Text="{Binding Runtime, StringFormat={}{0} min}" />
+                                                <TextBlock Text=" • " Margin="5,0" />
+                                                <TextBlock Text="{Binding Source}" />
+                                                <TextBlock Text=" • " Margin="5,0" />
+                                                <TextBlock Text="{Binding Countries[0]}" />
+                                            </StackPanel>
 
-                                    <!-- 🔹 Note et votes -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,15,0,10">
-                                        <materialDesign:PackIcon Kind="Star" Foreground="Gold" Width="18" Height="18" />
-                                        <TextBlock Text="{Binding Notes, StringFormat={}{0:N1}/10}" FontWeight="Bold" Margin="5,0" />
-                                        <TextBlock Text="{Binding Votes, StringFormat={} ({0} votes)}" Foreground="Gray" Margin="5,0" />
-                                    </StackPanel>
+                                            <!-- 🔹 Note et votes -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,15,0,10">
+                                                <materialDesign:PackIcon Kind="Star" Foreground="Gold" Width="18" Height="18" />
+                                                <TextBlock Text="{Binding Notes, StringFormat={}{0:N1}/10}" FontWeight="Bold" Margin="5,0" />
+                                                <TextBlock Text="{Binding Votes, StringFormat={} ({0} votes)}" Foreground="Gray" Margin="5,0" />
+                                            </StackPanel>
 
-                                    <!-- Genres -->
-                                    <WrapPanel>
-                                        <ItemsControl ItemsSource="{Binding Genres}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <Border CornerRadius="15"
+                                            <!-- Genres -->
+                                            <WrapPanel>
+                                                <ItemsControl ItemsSource="{Binding Genres}">
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border CornerRadius="15"
                                                         Background="{DynamicResource MaterialDesignPaperBrush}"
                                                         Margin="2"
                                                         Padding="6,2">
-                                                        <TextBlock Text="{Binding}" FontSize="12" />
-                                                    </Border>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </WrapPanel>
+                                                                <TextBlock Text="{Binding}" FontSize="12" />
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </WrapPanel>
 
-                                    <!-- Résumé -->
-                                    <TextBlock Text="Résumé :" FontWeight="Bold" Margin="0,15,0,5" />
-                                    <ScrollViewer Height="120" VerticalScrollBarVisibility="Auto">
-                                        <TextBlock Text="{Binding Plot}"
+                                            <!-- Résumé -->
+                                            <TextBlock Text="Résumé :" FontWeight="Bold" Margin="0,15,0,5" />
+                                            <ScrollViewer Height="120" VerticalScrollBarVisibility="Auto">
+                                                <TextBlock Text="{Binding Plot}"
                                            TextWrapping="Wrap"
                                            FontSize="13"
                                            Foreground="{DynamicResource MaterialDesignBodyMediumBrush}" />
-                                    </ScrollViewer>
+                                            </ScrollViewer>
 
-                                    <!-- 🔹 Studios -->
-                                    <TextBlock Text="Studios :" FontWeight="Bold" Margin="0,15,0,5" />
-                                    <ItemsControl ItemsSource="{Binding Studios}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel Orientation="Vertical" ItemWidth="120"  MaxHeight="220"  />
-                                                <!-- Largeur d'une colonne -->
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock FontSize="13" Text="{Binding}" Margin="0,2" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                            <!-- 🔹 Studios -->
+                                            <TextBlock Text="Studios :" FontWeight="Bold" Margin="0,15,0,5" />
+                                            <ItemsControl ItemsSource="{Binding Studios}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Vertical" ItemWidth="120"  MaxHeight="220" />
+                                                        <!-- Largeur d'une colonne -->
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock FontSize="13" Text="{Binding}" Margin="0,2" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                    <!-- Réalisateurs -->
-                                    <TextBlock Text="Réalisateurs :" FontWeight="Bold" Margin="0,15,0,5" />
-                                    <ItemsControl ItemsSource="{Binding Directors}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel Orientation="Vertical" ItemWidth="120"   MaxHeight="220" />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Name}" FontSize="13" Margin="0,2" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                            <!-- Réalisateurs -->
+                                            <TextBlock Text="Réalisateurs :" FontWeight="Bold" Margin="0,15,0,5" />
+                                            <ItemsControl ItemsSource="{Binding Directors}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Vertical" ItemWidth="120"   MaxHeight="220" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Name}" FontSize="13" Margin="0,2" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                    <!-- Acteurs -->
-                                    <TextBlock Text="Acteurs principaux :" FontWeight="Bold" Margin="0,15,0,5" />
-                                    <ItemsControl ItemsSource="{Binding Actors}">
-                                        <ItemsControl.ItemsPanel>
-                                            <ItemsPanelTemplate>
-                                                <WrapPanel Orientation="Vertical" ItemWidth="120"  MaxHeight="220"  />
-                                            </ItemsPanelTemplate>
-                                        </ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate>
-                                            <DataTemplate>
-                                                <TextBlock Text="{Binding Name}" FontSize="13" Margin="0,2" />
-                                            </DataTemplate>
-                                        </ItemsControl.ItemTemplate>
-                                    </ItemsControl>
+                                            <!-- Acteurs -->
+                                            <TextBlock Text="Acteurs principaux :" FontWeight="Bold" Margin="0,15,0,5" />
+                                            <ItemsControl ItemsSource="{Binding Actors}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <WrapPanel Orientation="Vertical" ItemWidth="120"  MaxHeight="220" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <TextBlock Text="{Binding Name}" FontSize="13" Margin="0,2" />
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
 
-                                    <!-- 🔹 Bande-annonce -->
-                                    <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
-                                        <TextBlock Text="🎬 Bande-annonce : " FontWeight="Bold" />
-                                        <TextBlock>
+                                            <!-- 🔹 Bande-annonce -->
+                                            <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
+                                                <TextBlock Text="🎬 Bande-annonce : " FontWeight="Bold" />
+                                                <TextBlock>
                                             <Hyperlink NavigateUri="{Binding Trailer}" RequestNavigate="Hyperlink_RequestNavigate">
                                                 <Run Text="Ouvrir dans YouTube" />
                                             </Hyperlink>
-                                        </TextBlock>
-                                    </StackPanel>
+                                                </TextBlock>
+                                            </StackPanel>
 
-                                    <!-- 🔹 Détails techniques -->
-                                    <GroupBox Header="Informations techniques" Margin="0,20,0,0">
-                                        <StackPanel Margin="8">
+                                            <!-- 🔹 Détails techniques -->
+                                            <GroupBox Header="Informations techniques" Margin="0,20,0,0">
+                                                <StackPanel Margin="8">
 
-                                            <!-- Vidéo -->
-                                            <TextBlock Text="Vidéo :" FontWeight="SemiBold" Margin="0,0,0,4" />
-                                            <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Videos}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Codec, StringFormat=• Codec : {0}}" FontSize="13" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                                    <!-- Vidéo -->
+                                                    <TextBlock Text="Vidéo :" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                                    <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Videos}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Codec, StringFormat=• Codec : {0}}" FontSize="13" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
 
-                                            <!-- Audio -->
-                                            <TextBlock Text="Audio :" FontWeight="SemiBold" Margin="0,8,0,4" />
-                                            <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Audios}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Language, StringFormat=• {0} ({Binding Codec})}" FontSize="13" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                                    <!-- Audio -->
+                                                    <TextBlock Text="Audio :" FontWeight="SemiBold" Margin="0,8,0,4" />
+                                                    <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Audios}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Language, StringFormat=• {0} ({Binding Codec})}" FontSize="13" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
 
-                                            <!-- Sous-titres -->
-                                            <TextBlock Text="Sous-titres :" FontWeight="SemiBold" Margin="0,8,0,4" />
-                                            <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Subtitles}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <TextBlock Text="{Binding Language, StringFormat=• {0}}" FontSize="13" />
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
+                                                    <!-- Sous-titres -->
+                                                    <TextBlock Text="Sous-titres :" FontWeight="SemiBold" Margin="0,8,0,4" />
+                                                    <ItemsControl ItemsSource="{Binding FileInfo.StreamDetails.Subtitles}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Language, StringFormat=• {0}}" FontSize="13" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </GroupBox>
                                         </StackPanel>
-                                    </GroupBox>
-                                </StackPanel>
-                            </Grid>
-                        </materialDesign:Card>
-                    </ScrollViewer>
-                </Grid>
-            </TabItem>
-            <!-- second onglet : Films -->
-            <TabItem Header="Films non identifée">
-            </TabItem>
-        </TabControl>
-    </DockPanel>
+                                    </Grid>
+                                </materialDesign:Card>
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+                    <!-- second onglet : Films -->
+                    <TabItem Header="Films non identifée">
+                    </TabItem>
+                </TabControl>
+            </DockPanel>
+        </Grid>
+    </materialDesign:DrawerHost>
 </Window>

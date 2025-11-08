@@ -9,13 +9,22 @@ using System.Threading.Tasks;
 
 namespace MediaManager.Data
 {
-    public static class DatabaseInitializer
+    public class DatabaseInitializer
     {
-        public static void Initialize(string dbPath = "movies.db")
-        {
-            DatabaseConnectionFactory.SetDatabasePath(dbPath);
+        private readonly string _dbPath;
 
-            if (!File.Exists(dbPath))
+        public DatabaseInitializer(string dbPath = "movies.db")
+        {
+            _dbPath = dbPath;
+        }
+
+        public void Initialize()
+        {
+            DatabaseConnectionFactory.SetDatabasePath(_dbPath);
+
+            bool dbExists = File.Exists(_dbPath);
+
+            if (!File.Exists(_dbPath))
             {
                 using var connection = DatabaseConnectionFactory.CreateConnection();
                 connection.Open();
@@ -32,7 +41,8 @@ namespace MediaManager.Data
                         FanartUrl TEXT,
                         ClearLogoUrl TEXT,
                         ThumbsUrl TEXT,
-                        LastWriteUtc TEXT
+                        LastWriteUtc TEXT,
+                        IsIdentified INTEGER DEFAULT 0
                     );
 
                     CREATE TABLE IF NOT EXISTS Settings (
@@ -40,6 +50,20 @@ namespace MediaManager.Data
                         Value TEXT
                     );
                 ");
+            }
+
+            // Si la DB vient d'être créée, insérer les chemins à ignorer par défaut
+            if (!dbExists)
+            {
+                var defaultIgnoredPaths = new List<string> { ".deletedByTMM", ".HomeTheater" };
+                foreach (var path in defaultIgnoredPaths)
+                {
+                    using var connection = DatabaseConnectionFactory.CreateConnection();
+                    connection.Open();
+                    connection.Execute(@"
+                        INSERT OR IGNORE INTO Settings (Key, Value) VALUES (@Key, @Value);
+                    ", new { Key = "IgnoredPath:" + path, Value = path });
+                }
             }
         }
     }

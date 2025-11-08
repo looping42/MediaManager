@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace MediaManager.NewFolder
+namespace MediaManager.Divers
 {
     // --- Commande générique pour les boutons / actions ---
     public class RelayCommand : ICommand

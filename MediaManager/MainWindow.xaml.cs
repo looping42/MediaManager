@@ -1,7 +1,8 @@
 ﻿using MediaManager.Business;
 using MediaManager.Data;
+using MediaManager.Divers;
+using MediaManager.Logger;
 using MediaManager.Models;
-using MediaManager.NewFolder;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -26,20 +27,20 @@ namespace MediaManager
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private Movie _selectedMovie;
         private readonly MovieRepository _movieRepo;
         private readonly SettingsRepository _settingsRepo;
         private readonly MovieScanner _movieScanner;
+        private readonly IUiLogger _logger;
+
         public ICommand LoadNfoCommand { get; }
         public ICommand ScanMoviesCommand { get; }
 
-        public ObservableCollection<Movie> Movies { get; set; } = new();
+        private Movie _selectedMovie;
         private MovieNfo _selectedMovieNfo;
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public ObservableCollection<Movie> Movies { get; set; } = new();
 
-        // Callback pour log
-        public Action<string> LogCallback { get; set; }
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public Movie SelectedMovie
         {
@@ -62,38 +63,39 @@ namespace MediaManager
             }
         }
 
-        private void Log(string message)
-        {
-            LogCallback?.Invoke(message);
-        }
-
-        public MainWindow()
+        public MainWindow(MovieRepository movieRepo, SettingsRepository settingsRepo, MovieScanner movieScanner, IUiLogger logger)
         {
             InitializeComponent();
+
+            _movieRepo = movieRepo;
+            _settingsRepo = settingsRepo;
+            _movieScanner = movieScanner;
+
+            _logger = new TextBoxLogger(ScanLogTextBox);
+
             Loaded += (s, e) =>
             {
                 this.Width = 1400;
                 this.Height = 900;
             };
-            DatabaseInitializer.Initialize("movies.db");
-            _movieRepo = new MovieRepository();
-            _settingsRepo = new SettingsRepository();
-            LogCallback = LogMessage;
-            _movieScanner = new MovieScanner(_movieRepo, LogCallback);
+
             Movies = new ObservableCollection<Movie>(_movieRepo.GetAllMovies());
 
             LoadNfoCommand = new RelayCommand(param => SelectedMovieNfo = LoadSelectedMovieNfo());
+            ScanMoviesCommand = new RelayCommand(ScanMovies);
+
             DataContext = this;
 
             // Initialisation de la commande du bouton
-            ScanMoviesCommand = new RelayCommand(ScanMovies);
+            if (Movies.Count > 0)
+                SelectedMovie = Movies[0];
         }
 
         private async void ScanMovies(object parameter)
         {
             try
             {
-                Log($"Start Scan");
+                _logger.Log($"Start Scan");
 
                 ScanProgressBar.Visibility = Visibility.Visible;
                 var paths = _settingsRepo.GetPaths("ScanPaths");
@@ -114,11 +116,11 @@ namespace MediaManager
                         }
                         catch (Exception ex)
                         {
-                            Log(ex.ToString());
+                            _logger.Log(ex.ToString());
                         }
                     });
                 });
-                Log($"End Scan");
+                _logger.Log($"End Scan");
 
                 Movies.Clear();
                 foreach (var m in _movieRepo.GetAllMovies())
@@ -160,6 +162,9 @@ namespace MediaManager
             MoviesList.ItemsSource = string.IsNullOrEmpty(searchText)
                 ? _movieRepo.GetAllMovies()
                 : _movieRepo.GetAllMovies(searchText);
+
+            if (Movies.Count > 0)
+                SelectedMovie = Movies[0];
         }
 
         private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
@@ -172,16 +177,6 @@ namespace MediaManager
         private void ExitMenuItem_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
-        }
-
-        public void LogMessage(string message)
-        {
-            // On s'assure que le code s'exécute dans le thread UI
-            Dispatcher.Invoke(() =>
-            {
-                ScanLogTextBox.AppendText($"{DateTime.Now:HH:mm:ss} - {message}\n");
-                ScanLogTextBox.ScrollToEnd();
-            });
         }
 
         private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
