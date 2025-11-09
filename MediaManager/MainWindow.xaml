@@ -6,91 +6,89 @@
         Width="1400"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
-        AllowsTransparency="False"
         ResizeMode="CanResize"
-        Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+        Background="#f4f6f8"
         Icon="/icone.png">
 
     <WindowChrome.WindowChrome>
-        <WindowChrome
-            CaptionHeight="0"
-            ResizeBorderThickness="5"
-            GlassFrameThickness="0"
-            CornerRadius="0" />
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="5" GlassFrameThickness="0" CornerRadius="0" />
     </WindowChrome.WindowChrome>
 
-    <!-- Root Grid -->
-    <Grid Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+    <Grid>
         <DockPanel>
 
             <!-- Barre supérieure -->
-            <Border Background="{DynamicResource SystemAccentColorDarkBrush}" Height="50" DockPanel.Dock="Top">
+            <Border Background="#3A7CA5" Height="50" DockPanel.Dock="Top" CornerRadius="0,0,8,8">
                 <DockPanel>
                     <TextBlock Text="🎬 Movie Scanner"
                                VerticalAlignment="Center"
                                Margin="16,0"
                                Foreground="White"
-                               FontSize="18"
+                               FontSize="20"
                                FontWeight="Bold" />
 
-                    <!-- Actions à droite -->
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
                         <Button ToolTip="Paramètres" Click="SettingsMenuItem_Click"
-                                Background="Transparent" BorderBrush="Transparent">
-                            <TextBlock Text="⚙" FontSize="16" Foreground="White" />
+                                Background="Transparent" BorderBrush="Transparent" Padding="5">
+                            <TextBlock Text="⚙" FontSize="18" Foreground="White" />
                         </Button>
                         <Button ToolTip="Quitter" Click="ExitMenuItem_Click"
-                                Background="Transparent" BorderBrush="Transparent">
-                            <TextBlock Text="✖" FontSize="16" Foreground="White" />
+                                Background="Transparent" BorderBrush="Transparent" Padding="5">
+                            <TextBlock Text="✖" FontSize="18" Foreground="White" />
                         </Button>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
             <!-- Barre de recherche -->
-            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="10">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="12" Cursor="">
                 <TextBox x:Name="SearchBox"
-                         VerticalAlignment="Center"
-                         Width="250"
-                         Height="35"
-                         Margin="0,0,20,0"
+                         Width="280"
+                         Height="36"
+                         Margin="0,0,15,0"
+                         Background="White"
+                         Foreground="#333"
+                         FontSize="14"
+                         Padding="8"
                          Text="Rechercher un film..."
-                         Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                         Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                         Padding="5" />
-
+                         BorderBrush="#ccc"
+                         BorderThickness="1" />
                 <Button Content="Scanner"
                         Width="120"
-                        Height="35"
-                        Command="{Binding ScanMoviesCommand}"
-                        Background="{DynamicResource SystemAccentColorBrush}"
-                        Foreground="White" />
+                        Height="36"
+                        Background="#f08a5d"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        BorderThickness="0"
 
+                        Command="{Binding ScanMoviesCommand}" />
                 <ProgressBar x:Name="ScanProgressBar"
                              Width="150"
-                             Height="5"
+                             Height="6"
                              Margin="15,0,0,0"
                              IsIndeterminate="True"
                              Visibility="Collapsed"
                              VerticalAlignment="Center"
-                             Foreground="{DynamicResource SystemAccentColorBrush}" />
+                             Foreground="#f08a5d"
+                             Background="#e0e0e0" />
             </StackPanel>
 
-            <!-- Log en bas -->
+            <!-- Log -->
             <TextBox x:Name="ScanLogTextBox"
                      DockPanel.Dock="Bottom"
-                     Height="200"
-                     Margin="10"
+                     Height="180"
+                     Margin="12"
                      VerticalScrollBarVisibility="Auto"
                      HorizontalScrollBarVisibility="Auto"
                      IsReadOnly="True"
                      TextWrapping="Wrap"
-                     Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                     Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+                     Background="White"
+                     Foreground="#333"
+                     BorderBrush="#ccc"
+                     BorderThickness="1" />
 
             <!-- Contenu principal -->
-            <TabControl>
-                <!-- Onglet Films -->
+            <TabControl Margin="12" Background="Transparent">
                 <TabItem Header="Films">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -99,33 +97,35 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Liste de films -->
-                        <ListBox x:Name="MoviesList"
-                                 ItemsSource="{Binding Movies}"
-                                 SelectedItem="{Binding SelectedMovie, Mode=TwoWay}"
-                                 Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                                 Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}"
-                                 BorderThickness="0"
-                                 FontSize="12"
-                                 Margin="10">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="10,0" />
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <Border Grid.Column="0" Background="White" CornerRadius="8" BorderBrush="#ddd" BorderThickness="1" Margin="0,0,12,0">
+                            <ListBox x:Name="MoviesList"
+                                     ItemsSource="{Binding Movies}"
+                                     SelectedItem="{Binding SelectedMovie, Mode=TwoWay}"
+                                     Background="Transparent"
+                                     Foreground="#333"
+                                     BorderThickness="0"
+                                     FontSize="14"
+                                     Margin="0">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="10,6" />
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
 
                         <!-- Détails -->
-                        <ScrollViewer Grid.Column="1" Margin="20" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" Padding="20" CornerRadius="8" DataContext="{Binding SelectedMovieNfo}">
+                        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <Border Background="White" Padding="20" CornerRadius="8" BorderBrush="#ddd" BorderThickness="1" DataContext="{Binding SelectedMovieNfo}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="250" />
                                         <ColumnDefinition Width="*" />
                                     </Grid.ColumnDefinitions>
 
-                                    <!-- Poster & Fanart -->
+                                    <!-- Poster et Fanart -->
                                     <StackPanel Orientation="Vertical">
-                                        <TextBlock Text="Poster" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,5" />
+                                        <TextBlock Text="Poster" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,8" />
                                         <ItemsControl ItemsSource="{Binding Thumbs}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -134,7 +134,7 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
 
-                                        <TextBlock Text="Fanart" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,10,0,5" />
+                                        <TextBlock Text="Fanart" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,12,0,5" />
                                         <ItemsControl ItemsSource="{Binding Fanart.Thumbs}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
@@ -147,8 +147,9 @@
                                     <!-- Infos principales -->
                                     <StackPanel Grid.Column="1" Margin="20,0,0,0">
                                         <TextBlock Text="{Binding Title}" FontSize="26" FontWeight="Bold" TextWrapping="Wrap" />
-                                        <TextBlock Text="{Binding OriginalTitle}" FontStyle="Italic" Foreground="Gray" Margin="0,0,0,10" />
-                                        <TextBlock Text="{Binding Tagline}" FontStyle="Italic" Foreground="Gray" FontSize="13" Margin="0,0,0,10" />
+                                        <TextBlock Text="{Binding OriginalTitle}" FontStyle="Italic" Foreground="#666" Margin="0,0,0,10" />
+                                        <TextBlock Text="{Binding Tagline}" FontStyle="Italic" Foreground="#999" FontSize="13" Margin="0,0,0,10" />
+                           
 
                                         <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                                             <TextBlock Text="{Binding Year}" FontWeight="Bold" />
@@ -234,9 +235,9 @@
                                         <StackPanel Orientation="Horizontal" Margin="0,15,0,0">
                                             <TextBlock Text="🎬 Bande-annonce : " FontWeight="Bold" />
                                             <TextBlock>
-                                                <Hyperlink NavigateUri="{Binding Trailer}" RequestNavigate="Hyperlink_RequestNavigate">
-                                                    <Run Text="Ouvrir dans YouTube" />
-                                                </Hyperlink>
+            <Hyperlink NavigateUri="{Binding Trailer}" RequestNavigate="Hyperlink_RequestNavigate">
+                <Run Text="Ouvrir dans YouTube" />
+            </Hyperlink>
                                             </TextBlock>
                                         </StackPanel>
                                     </StackPanel>
@@ -246,7 +247,6 @@
                     </Grid>
                 </TabItem>
 
-                <!-- Onglet Films non identifiés -->
                 <TabItem Header="Films non identifiés" />
             </TabControl>
         </DockPanel>
