@@ -1,5 +1,6 @@
 ﻿using Dapper;
-using MediaManager.Models;
+using MediaManager.Domain;
+using MediaManager.Domain.Interface;
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
@@ -7,11 +8,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediaManager.Data
+namespace MediaManager.Infrastructure.Persistence
 {
-    public class MovieRepository
+    public class MovieRepository : IMovieRepository
     {
-        public bool MovieExistsByNfoPath(string nfoPath)
+        public async Task<bool> MovieExistsByNfoPathAsync(string nfoPath)
         {
             using var connection = DatabaseConnectionFactory.CreateConnection();
             connection.Open();
@@ -22,7 +23,7 @@ namespace MediaManager.Data
             ) > 0;
         }
 
-        public void InsertMovies(IEnumerable<Movie> movies)
+        public async Task InsertMoviesAsync(IEnumerable<Movie> movies)
         {
             if (movies == null || !movies.Any())
                 return;
@@ -41,7 +42,7 @@ namespace MediaManager.Data
             transaction.Commit();
         }
 
-        public void UpdateMovie(Movie movie)
+        public async Task UpdateMovieAsync(Movie movie)
         {
             if (movie == null) return;
 
@@ -68,7 +69,7 @@ namespace MediaManager.Data
             connection.Execute(sql, movie);
         }
 
-        public Movie GetMovieById(int id)
+        public async Task<Movie?> GetMovieByIdAsync(int id)
         {
             using var connection = DatabaseConnectionFactory.CreateConnection();
             connection.Open();
@@ -79,7 +80,7 @@ namespace MediaManager.Data
             );
         }
 
-        public IEnumerable<Movie> GetAllMovies(string? search = null)
+        public async Task<IEnumerable<Movie>> GetAllMoviesAsync(string? search = null)
         {
             using var connection = DatabaseConnectionFactory.CreateConnection();
             connection.Open();

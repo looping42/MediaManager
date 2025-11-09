@@ -1,4 +1,5 @@
-﻿using MediaManager.Data;
+﻿using MediaManager.Domain.Constants;
+using MediaManager.Domain.Interface;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,13 +23,14 @@ namespace MediaManager
     /// </summary>
     public partial class SettingsWindow : Window
     {
-        private readonly SettingsRepository _settingsRepo;
+        private readonly ISettingsRepository _settingsRepo;
 
-        public SettingsWindow()
+        // Constructeur DI
+        public SettingsWindow(ISettingsRepository settingsRepo)
         {
             InitializeComponent();
 
-            _settingsRepo = new SettingsRepository();
+            _settingsRepo = settingsRepo ?? throw new ArgumentNullException(nameof(settingsRepo));
 
             ApiKeyTextBox.Text = _settingsRepo.Get(ConstantSettings.ApiKeyKey) ?? "";
 
@@ -57,6 +59,17 @@ namespace MediaManager
 
             MessageBox.Show("Enregistrement ✅", "OK", MessageBoxButton.OK, MessageBoxImage.Information);
             Close();
+        }
+
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ButtonState == MouseButtonState.Pressed)
+                this.DragMove();
+        }
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 }

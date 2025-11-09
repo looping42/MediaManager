@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediaManager.Data
+namespace MediaManager.Infrastructure.Persistence
 {
     public static class DatabaseConnectionFactory
     {

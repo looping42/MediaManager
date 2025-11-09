@@ -1,42 +1,29 @@
-﻿using MediaManager.Data;
-using MediaManager.Logger;
-using MediaManager.Models;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
+﻿using MediaManager.Domain;
+using MediaManager.Domain.Constants;
+using MediaManager.Domain.Interface;
+using MediaManager.Domain.Movies.Interface;
 using System.Xml;
-using System.Xml.Linq;
 
-namespace MediaManager.Business
+namespace MediaManager.Application.Services
 {
-    public class MovieScanner
+    public class MovieScanner : IMovieScanner
     {
-        private readonly MovieRepository _movieRepo;
+        private readonly IMovieRepository _movieRepo;
+        private readonly ISettingsRepository _settingsRepo;
+        private readonly IUiLogger _logger;
 
         public event Action? ScanCompleted;
 
         public event Action<Movie>? MovieScanned;
 
-        private readonly IUiLogger _logger;
-        private readonly SettingsRepository _settingsRepo;
-
-        public MovieScanner(MovieRepository movieRepo, SettingsRepository settingsRepo, IUiLogger logger)
+        public MovieScanner(IMovieRepository movieRepo, ISettingsRepository settingsRepo, IUiLogger logger)
         {
             _movieRepo = movieRepo;
             _settingsRepo = settingsRepo;
             _logger = logger;
         }
 
-        public void ScanDirectoryNfoOnly(string directoryPath)
+        public async Task ScanDirectoryNfoOnly(string directoryPath)
         {
             if (!Directory.Exists(directoryPath))
             {
@@ -44,7 +31,7 @@ namespace MediaManager.Business
             }
             var ignoredPath = _settingsRepo.GetPaths(ConstantSettings.IgnoredPath);
 
-            var allMovies = _movieRepo.GetAllMovies();
+            var allMovies = await _movieRepo.GetAllMoviesAsync();
             var existingNfos = new HashSet<string>(allMovies.Select(m => m.NfoUrl));
             var moviesToInsert = new List<Movie>();
 
@@ -104,10 +91,10 @@ namespace MediaManager.Business
                 validNfoFiles.Add(nfoFile);
             }
 
-            _movieRepo.InsertMovies(moviesToInsert);
+            await _movieRepo.InsertMoviesAsync(moviesToInsert);
 
             //Lance le scan complet en tâche de fond
-            Task.Run(() =>
+            _ = Task.Run(() =>
             {
                 ScanUnidentifiedMovies(directoryPath);
 
@@ -155,7 +142,7 @@ namespace MediaManager.Business
                     LastWriteUtc = lastWrite.ToString("o"),
                 };
 
-                _movieRepo.UpdateMovie(movie); // méthode qui update ou insert
+                _movieRepo.UpdateMovieAsync(movie); // méthode qui update ou insert
             }
             catch (Exception ex)
             {
@@ -164,11 +151,11 @@ namespace MediaManager.Business
             }
         }
 
-        public void ScanUnidentifiedMovies(string directoryPath)
+        public async Task ScanUnidentifiedMovies(string directoryPath)
         {
             if (!Directory.Exists(directoryPath)) return;
 
-            var allMovies = _movieRepo.GetAllMovies();
+            var allMovies = await _movieRepo.GetAllMoviesAsync();
             var existingFolders = new HashSet<string>(allMovies.Select(m => m.FolderUrl));
             var existingTitles = new HashSet<string>(allMovies.Select(m => m.Title), StringComparer.OrdinalIgnoreCase);
 
@@ -211,7 +198,7 @@ namespace MediaManager.Business
                     moviesToInsert.Add(movie);
                     _logger.Log($"Movie non identifié ajouté : {movie.Title}");
                 }
-                _movieRepo.InsertMovies(moviesToInsert);
+                await _movieRepo.InsertMoviesAsync(moviesToInsert);
             }
         }
 

@@ -1,5 +1,6 @@
-﻿using MediaManager.Data;
-using MediaManager.Models;
+﻿using Domain.Movie.Dto;
+using MediaManager.Domain.Constants;
+using MediaManager.Domain.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,16 +10,18 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace MediaManager.Business.ApiSearch
+namespace MediaManager.Application.Services
 {
     public class TmdbMetadataProvider : IMovieMetadataProvider
     {
-        private readonly HttpClient _httpClient = new HttpClient();
-        private readonly SettingsRepository _settingsRepo;
+        private readonly HttpClient _httpClient;
+        private readonly ISettingsRepository _settingsRepo;
 
-        public TmdbMetadataProvider()
+        // DI constructor
+        public TmdbMetadataProvider(ISettingsRepository settingsRepo, HttpClient httpClient)
         {
-            _settingsRepo = new SettingsRepository();
+            _settingsRepo = settingsRepo ?? throw new ArgumentNullException(nameof(settingsRepo));
+            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
         public async Task<MovieMetadata> FetchMetadataAsync(string title, string year = null)

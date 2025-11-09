@@ -1,10 +1,7 @@
-﻿using MediaManager.Business.ApiSearch;
-using MediaManager.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Domain.Movie.Dto;
+using MediaManager.Domain.Interface;
 
-namespace MediaManager.Business
+namespace MediaManager.Application.Services
 {
     public class MovieMetadataService
     {

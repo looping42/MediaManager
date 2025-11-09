@@ -1,5 +1,6 @@
-﻿using MediaManager.Data;
-using MediaManager.Models;
+﻿using Domain.Movie.Dto;
+using MediaManager.Domain.Constants;
+using MediaManager.Domain.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,16 +10,17 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace MediaManager.Business.ApiSearch
+namespace MediaManager.Application.Services
 {
     public class FanartMetadataProvider : IMovieMetadataProvider
     {
         private readonly HttpClient _httpClient = new HttpClient();
-        private readonly SettingsRepository _settingsRepo;
+        private readonly ISettingsRepository _settingsRepo;
 
-        public FanartMetadataProvider()
+        public FanartMetadataProvider(HttpClient httpClient, ISettingsRepository settingsRepo)
         {
-            _settingsRepo = new SettingsRepository();
+            _httpClient = httpClient;
+            _settingsRepo = settingsRepo;
         }
 
         public async Task<MovieMetadata> FetchMetadataAsync(string title, string year = null)

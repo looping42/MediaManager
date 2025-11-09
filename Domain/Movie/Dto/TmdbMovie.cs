@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediaManager.Models
+namespace Domain.Movie.Dto
 {
     public class TmdbMovie
     {

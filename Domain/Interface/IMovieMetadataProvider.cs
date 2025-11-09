@@ -1,11 +1,11 @@
-﻿using MediaManager.Models;
+﻿using Domain.Movie.Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediaManager.Business.ApiSearch
+namespace MediaManager.Domain.Interface
 {
     public interface IMovieMetadataProvider
     {

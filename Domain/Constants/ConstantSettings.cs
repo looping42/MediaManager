@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediaManager
+namespace MediaManager.Domain.Constants
 {
     public class ConstantSettings
     {

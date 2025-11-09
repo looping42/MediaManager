@@ -51,8 +51,7 @@
                  Margin="0,0,20,0"
                  materialDesign:HintAssist.Hint="Rechercher un film..."
                  Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                 Padding="30,2,5,2"
-                 TextChanged="SearchBox_TextChanged" />
+                 Padding="30,2,5,2" />
 
                     <Button Content="Scanner"
                 Padding="10,5"

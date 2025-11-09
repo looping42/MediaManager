@@ -1,23 +1,19 @@
-﻿using MediaManager.Business;
-using MediaManager.Data;
+﻿using Domain.Movie.Dto;
 using MediaManager.Divers;
+using MediaManager.Domain;
+using MediaManager.Domain.Interface;
+using MediaManager.Domain.Movies.Interface;
 using MediaManager.Logger;
-using MediaManager.Models;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
-using System.Windows.Shapes;
 using System.Xml.Serialization;
 
 namespace MediaManager
@@ -27,13 +23,13 @@ namespace MediaManager
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
-        private readonly MovieRepository _movieRepo;
-        private readonly SettingsRepository _settingsRepo;
-        private readonly MovieScanner _movieScanner;
+        private readonly IMovieRepository _movieRepo;
+        private readonly ISettingsRepository _settingsRepo;
+        private readonly IMovieScanner _movieScanner;
         private readonly IUiLogger _logger;
 
-        public ICommand LoadNfoCommand { get; }
-        public ICommand ScanMoviesCommand { get; }
+        public ICommand LoadNfoCommand { get; set; }
+        public ICommand ScanMoviesCommand { get; set; }
 
         private Movie _selectedMovie;
         private MovieNfo _selectedMovieNfo;
@@ -63,7 +59,7 @@ namespace MediaManager
             }
         }
 
-        public MainWindow(MovieRepository movieRepo, SettingsRepository settingsRepo, MovieScanner movieScanner, IUiLogger logger)
+        public MainWindow(IMovieRepository movieRepo, ISettingsRepository settingsRepo, IMovieScanner movieScanner, IUiLogger logger)
         {
             InitializeComponent();
 
@@ -73,25 +69,50 @@ namespace MediaManager
 
             _logger = new TextBoxLogger(ScanLogTextBox);
 
-            Loaded += (s, e) =>
-            {
-                this.Width = 1400;
-                this.Height = 900;
-            };
+            Loaded += async (s, e) => await InitializeAsync();
 
-            Movies = new ObservableCollection<Movie>(_movieRepo.GetAllMovies());
+            //Loaded += async (s, e) =>
+            //{
+            //    this.Width = 1400;
+            //    this.Height = 900;
+            //    Movies = new ObservableCollection<Movie>(await _movieRepo.GetAllMoviesAsync());
+            //};
 
-            LoadNfoCommand = new RelayCommand(param => SelectedMovieNfo = LoadSelectedMovieNfo());
-            ScanMoviesCommand = new RelayCommand(ScanMovies);
+            //LoadNfoCommand = new RelayCommand(param => SelectedMovieNfo = await LoadSelectedMovieNfo());
+
+            //ScanMoviesCommand = new RelayCommand(ScanMovies);
+
+            //DataContext = this;
+
+            //// Initialisation de la commande du bouton
+            //if (Movies.Count > 0)
+            //    SelectedMovie = Movies[0];
+        }
+
+        private async Task InitializeAsync()
+        {
+            this.Width = 1400;
+            this.Height = 900;
+
+            // Charge les films depuis la DB
+            var movies = await _movieRepo.GetAllMoviesAsync();
+            Movies = new ObservableCollection<Movie>(movies);
+
+            // Initialisation des commandes async
+            LoadNfoCommand = new RelayCommand(async _ => SelectedMovieNfo = await LoadSelectedMovieNfo());
+
+            //var test = await ScanMovies();
+            //ScanMoviesCommand = new RelayCommand(_ => await ScanMovies());
+
+            ScanMoviesCommand = new RelayCommand(async param => await ScanMovies(param));
 
             DataContext = this;
 
-            // Initialisation de la commande du bouton
             if (Movies.Count > 0)
                 SelectedMovie = Movies[0];
         }
 
-        private async void ScanMovies(object parameter)
+        private async Task ScanMovies(object parameter)
         {
             try
             {
@@ -123,7 +144,7 @@ namespace MediaManager
                 _logger.Log($"End Scan");
 
                 Movies.Clear();
-                foreach (var m in _movieRepo.GetAllMovies())
+                foreach (var m in await _movieRepo.GetAllMoviesAsync())
                     Movies.Add(m);
             }
             finally
@@ -135,11 +156,11 @@ namespace MediaManager
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 
-        private MovieNfo LoadSelectedMovieNfo()
+        private async Task<MovieNfo> LoadSelectedMovieNfo()
         {
             if (SelectedMovie == null) return null;
 
-            var movieFromDb = _movieRepo.GetMovieById(SelectedMovie.Id);
+            var movieFromDb = await _movieRepo.GetMovieByIdAsync(SelectedMovie.Id);
             if (movieFromDb == null) return null;
 
             var serializer = new XmlSerializer(typeof(MovieNfo));
@@ -156,12 +177,12 @@ namespace MediaManager
             }
         }
 
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        private async Task SearchBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             var searchText = SearchBox.Text.Trim();
             MoviesList.ItemsSource = string.IsNullOrEmpty(searchText)
-                ? _movieRepo.GetAllMovies()
-                : _movieRepo.GetAllMovies(searchText);
+                ? await _movieRepo.GetAllMoviesAsync()
+                : await _movieRepo.GetAllMoviesAsync(searchText);
 
             if (Movies.Count > 0)
                 SelectedMovie = Movies[0];
@@ -169,7 +190,7 @@ namespace MediaManager
 
         private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
         {
-            var settingsWindow = new SettingsWindow();
+            var settingsWindow = App.ServiceProvider.GetRequiredService<SettingsWindow>();
             settingsWindow.Owner = this;
             settingsWindow.ShowDialog();
         }
@@ -198,5 +219,9 @@ namespace MediaManager
 
             e.Handled = true;
         }
+
+        //private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+        //{
+        //}
     }
 }

@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MediaManager.Models
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Xml.Serialization;
+using System;
+using System.Collections.Generic;
 
+using System.Xml.Serialization;
+
+namespace Domain.Movie.Dto
+{
     [XmlRoot("movie", Namespace = "")]
     public class MovieNfo
     {

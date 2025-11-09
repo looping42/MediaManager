@@ -1,5 +1,7 @@
-﻿using MediaManager.Business;
-using MediaManager.Data;
+﻿using MediaManager.Application.Services;
+using MediaManager.Domain.Interface;
+using MediaManager.Domain.Movies.Interface;
+using MediaManager.Infrastructure.Persistence;
 using MediaManager.Logger;
 using Microsoft.Extensions.DependencyInjection;
 using System.Configuration;
@@ -11,7 +13,7 @@ namespace MediaManager
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
         public static IServiceProvider ServiceProvider { get; private set; }
 
@@ -35,15 +37,27 @@ namespace MediaManager
         private void ConfigureServices(IServiceCollection services)
         {
             // Exemple : injection de dépendances
+            // Infrastructure
             services.AddSingleton(new DatabaseInitializer("movies.db"));
+            //services.AddSingleton<DatabaseConnectionFactory>();
+
+            // Repositories
             services.AddSingleton<MovieRepository>();
-            services.AddSingleton<MovieScanner>();
-            services.AddSingleton<SettingsRepository>();
+            services.AddSingleton<IMovieRepository, MovieRepository>();
+
+            services.AddSingleton<ISettingsRepository, SettingsRepository>();
+
+            // Logger
             services.AddSingleton<IUiLogger, UiLogger>();
 
-            services.AddSingleton<MovieScanner>();
+            // Services Métadonnées
+            services.AddSingleton<IMovieScanner, MovieScanner>();
+            services.AddSingleton<IMovieMetadataProvider, TmdbMetadataProvider>();
+            services.AddSingleton<IMovieMetadataProvider, FanartMetadataProvider>();
+
             // Injection de la fenêtre principale
             services.AddTransient<MainWindow>();
+            services.AddTransient<SettingsWindow>();
         }
     }
 }
